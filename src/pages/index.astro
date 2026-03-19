@@ -1,0 +1,2098 @@
+---
+import routes from "../data/routes.json";
+import global from "../data/global.json";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { toRelativeSiteUrl } from "../lib/url-utils";
+import { buildBreadcrumbSchema, buildWebPageSchema } from "../lib/seo";
+
+const home = routes.find((entry) => entry.route === "/");
+
+if (!home) {
+  throw new Error("Homepage route not found in routes.json");
+}
+
+function decodeHtml(value = "") {
+  return value
+    .replaceAll("&#038;", "&")
+    .replaceAll("&#8211;", "–")
+    .replaceAll("&#8217;", "'")
+    .replaceAll("&#8220;", '"')
+    .replaceAll("&#8221;", '"')
+    .replaceAll("&#8230;", "...")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'");
+}
+
+function stripTags(value = "") {
+  return decodeHtml(
+    value
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+}
+
+function extractTestimonials(content = "") {
+  return [
+    ...content.matchAll(
+      /<blockquote class="kt-testimonial-content"><a href="([^"]+)">([\s\S]*?)<\/a><\/blockquote>[\s\S]*?<div class="kt-testimonial-name"><strong>([\s\S]*?)<\/strong><\/div>/g,
+    ),
+  ].map((match, index) => ({
+    href: toRelativeSiteUrl(match[1]),
+    quote: stripTags(match[2]),
+    name: decodeHtml(match[3]),
+    image:
+      [
+        "https://www.blossoms.com/wp-content/uploads/2025/02/location1-dating-site-online-couple-david-and-phoebe.png",
+        "https://www.blossoms.com/wp-content/uploads/2025/02/location1-dating-site-online-couple-john-and-sienna.png",
+        "https://www.blossoms.com/wp-content/uploads/2025/02/location1-dating-site-online-couple-doug-and-jheng.png",
+      ][index] || "",
+  }));
+}
+
+function extractFaqItems(content = "") {
+  return [
+    ...content.matchAll(
+      /<span class="kt-blocks-accordion-title">([\s\S]*?)<\/span>[\s\S]*?<div class="kt-accordion-panel-inner">[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/g,
+    ),
+  ].map((match) => ({
+    question: stripTags(match[1]),
+    answer: stripTags(match[2]),
+  }));
+}
+
+function extractLocations(content = "") {
+  const sectionMatch = content.match(
+    /<ul class="containerx">([\s\S]*?)<\/ul>\s*<style>/,
+  );
+  if (!sectionMatch) return [];
+
+  return [
+    ...sectionMatch[1].matchAll(
+      /<li class="cardx"><strong>([\s\S]*?)<\/strong><ul class='list-unstyled'>([\s\S]*?)<\/ul><\/li>/g,
+    ),
+  ].map((match) => ({
+    province: stripTags(match[1]),
+    cities: [
+      ...match[2].matchAll(
+        /<a href="([^"]+)"[^>]*title="([^"]+)">([\s\S]*?)<\/a>/g,
+      ),
+    ].map((cityMatch) => ({
+      href: toRelativeSiteUrl(cityMatch[1]),
+      title: cityMatch[2],
+      label: stripTags(cityMatch[3]),
+    })),
+  }));
+}
+
+const testimonials = extractTestimonials(home.content);
+const faqItems = extractFaqItems(home.content);
+const locations = extractLocations(home.content);
+const popularCities = locations.flatMap((group) => group.cities).slice(0, 18);
+
+const featuredLogos = [
+  {
+    src: "https://www.blossoms.com/wp-content/uploads/2025/02/fox-news-asian-dating-site-philippines-review.png",
+    alt: "Fox News asian dating site Philippines review",
+  },
+  {
+    src: "https://www.blossoms.com/wp-content/uploads/2025/02/yahoo-news-philippines-dating-site-review.png",
+    alt: "Yahoo News Philippines dating site review",
+  },
+  {
+    src: "https://www.blossoms.com/wp-content/uploads/2025/02/bloomberg-philippines-dating-website-reviews.png",
+    alt: "Bloomberg Philippines dating website reviews",
+  },
+];
+
+const trustPoints = [
+  "Undefeated Champions of Asian Dating. Over 50 years of match-making success and proven results.",
+  "Exclusive free access for Asian women to keep the community active, balanced, and genuine.",
+  "Advanced security technology with profile validation and privacy safeguards.",
+];
+
+const stats = [
+  {
+    value: "86%",
+    label: "User Engagement",
+    description: "Of actively engaged chats within 24 hours of joining.",
+  },
+  {
+    value: "5M",
+    label: "Perfect Match",
+    description: "Successful matches made since the platform's launch.",
+  },
+  {
+    value: "34K+",
+    label: "Love Online",
+    description: "Messages exchanged daily on the platform on average.",
+  },
+];
+
+const pillars = [
+  {
+    id: "different",
+    tab: "Why We're Different",
+    title: "Why Blossoms feels different from faster, lower-trust dating platforms",
+    body: "Blossoms is built around trust signals that matter in Asian dating: profile verification, safer messaging, a longer operating history, and a member base oriented toward real relationships instead of disposable attention loops.",
+  },
+  {
+    id: "using",
+    tab: "Using Blossoms.com",
+    title: "A long-running Asian dating brand with clearer expectations",
+    body: "Finding the right Asian dating site can be difficult when most platforms optimize for noise. Blossoms takes a more deliberate route, pairing decades of matchmaking experience with a product shaped around sincerity, safety, and long-term intent.",
+  },
+  {
+    id: "love",
+    tab: "Long-Term Love",
+    title: "Meet Asian singles in a setting built for long-term relationships",
+    body: "Cherry Blossoms supports international dating for people looking for something serious. Whether your focus is Asian dating broadly or Filipina dating in specific city pages, the platform is structured around meaningful connection rather than casual swiping.",
+  },
+];
+
+const bodyClass =
+  global.bodyClass ||
+  "home wp-singular page-template-default page page-id-44 wp-custom-logo wp-embed-responsive wp-theme-kadence footer-on-bottom hide-focus-outline link-style-standard content-title-style-hide content-width-fullwidth content-style-unboxed content-vertical-padding-hide non-transparent-header mobile-non-transparent-header";
+const homeTitle = "Cherry Blossoms Asian Dating | International Asian Dating Since 1974";
+const homeDescription =
+  "Cherry Blossoms is an Asian dating site for people seeking meaningful international relationships. Discover Asian dating, real members, and long-term connections since 1974.";
+const homeSchema = [
+  buildWebPageSchema({
+    title: homeTitle,
+    description: homeDescription,
+    url: "/",
+  }),
+  buildBreadcrumbSchema([{ name: "Home", url: "/" }]),
+];
+---
+
+<SiteLayout
+  title={homeTitle}
+  description={homeDescription}
+  canonical={toRelativeSiteUrl(home.link)}
+  bodyClass={bodyClass}
+  global={global}
+  seo={{
+    ...(home.seo || {}),
+    title: homeTitle,
+    description: homeDescription,
+    ogTitle: "Cherry Blossoms | Asian Dating Since 1974",
+    ogDescription: homeDescription,
+    twitterTitle: "Cherry Blossoms | Asian Dating Since 1974",
+    twitterDescription: homeDescription,
+    schema: homeSchema,
+  }}
+  disableExternalAssets={true}
+>
+  <div class="home-redesign">
+    <section class="hero">
+      <div class="hero__backdrop"></div>
+      <div class="shell hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow">Asian Dating Since 1974</p>
+          <h1>Start your journey toward a meaningful relationship.</h1>
+          <p class="lede">
+            Cherry Blossoms is an Asian dating brand for people looking for
+            serious connections, cultural openness, and a more intentional path
+            to international relationships.
+          </p>
+          <ul class="hero__checks">
+            <li>Established since 1974</li>
+            <li>Real members worldwide</li>
+            <li>Designed for long-term relationships</li>
+          </ul>
+        </div>
+
+        <aside class="hero__panel">
+          <div class="hero__badge">🌸 Start Your Journey</div>
+          <a
+            class="cta cta--male"
+            href="https://members.blossoms.com/register.php?gender=male&adid=www"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <span>I Am a Man...</span>
+            <small>Seeking a Meaningful Relationship</small>
+          </a>
+          <a
+            class="cta cta--female"
+            href="https://members.blossoms.com/register.php?gender=female&adid=www"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <span>I Am a Woman...</span>
+            <small>Seeking a Meaningful Relationship</small>
+          </a>
+          <p class="hero__login">
+            Already a member?
+            <a href="https://members.blossoms.com/login.php">Login</a>
+          </p>
+          <div class="hero__microproof">
+            <span>50+ years of matchmaking</span>
+            <span>Verified profiles</span>
+            <span>Worldwide community</span>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="featured shell">
+      <p class="section-kicker">Featured In</p>
+      <h2>Cherry Blossoms and Asian dating coverage from major publications</h2>
+      <div class="featured__logos">
+        {
+          featuredLogos.map((logo) => (
+            <div class="featured__logo">
+              <img
+                src={logo.src}
+                alt={logo.alt}
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="shell split--media">
+      <div class="video-hero">
+        <video
+          class="video-hero__media"
+          src="https://www.blossoms.com/wp-content/uploads/2025/06/AboutUsBlossomsDatin-1.mp4"
+          poster="https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg"
+          autoplay
+          muted
+          loop
+          playsinline></video>
+        <div class="video-hero__overlay">
+          <div class="stack video-hero__content">
+            <p class="section-kicker">Why Blossoms</p>
+            <h2>An Asian Dating Site Like No Other</h2>
+            <p class="video-hero__lede">
+              A long-standing platform built for people looking for real
+              commitment, cultural connection, and a safer way to meet.
+            </p>
+            <div class="trust-list">
+              {
+                trustPoints.map((point) => (
+                  <article class="trust-item">
+                    <span class="trust-item__icon">♥</span>
+                    <p>{point}</p>
+                  </article>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="about shell">
+      <div class="about__grid">
+        <div class="about__content">
+          <p class="section-kicker">About Us</p>
+          <h2>Decades of Trust in Asian Dating</h2>
+          <p>
+            Cherry Blossoms has been helping people navigate Asian dating since
+            1974. The brand has lasted because it leans on trust, safer member
+            interactions, and a more serious relationship posture than the
+            average swipe-first dating product.
+          </p>
+          <ul class="about__list">
+            <li>
+              <strong>Global Reach:</strong> Connecting members from across the globe.
+            </li>
+            <li>
+              <strong>Verified Profiles:</strong> Stringent checks to ensure authenticity.
+            </li>
+            <li>
+              <strong>Matchmaking Heritage:</strong> Thousands of successful marriages.
+            </li>
+          </ul>
+          <div class="panel-actions">
+            <a class="button-primary" href="/about-us/">Learn Our Story</a>
+            <a class="button-secondary" href="/dating-safety/">
+              Review Safety Tips
+            </a>
+          </div>
+        </div>
+        <aside class="about__rail" aria-label="Trust highlights">
+          <div class="about__seal">
+            <span>Since</span>
+            <strong>1974</strong>
+          </div>
+          <div class="about__note">
+            <p class="about__note-label">Built For</p>
+            <p>
+              People who want commitment, cultural openness, and a platform with
+              real history behind it.
+            </p>
+          </div>
+          <div class="about__stats">
+            <article>
+              <strong>50+</strong>
+              <span>Years of matchmaking heritage</span>
+            </article>
+            <article>
+              <strong>Global</strong>
+              <span>Member network spanning borders</span>
+            </article>
+            <article>
+              <strong>Verified</strong>
+              <span>Profiles designed to build trust</span>
+            </article>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="platform overview">
+      <div class="overview-card">
+        <div class="overview-card__copy stack">
+          <p class="section-kicker">Platform Overview</p>
+          <h2 style="width:100%;">
+            A relationship-first Asian dating platform with more structure and
+            less noise
+          </h2>
+          <div class="overview-card__body">
+            <p>
+              Blossoms is designed for people who want to meet Asian singles in
+              a setting that feels more credible, more patient, and less
+              disposable than mainstream dating apps.
+            </p>
+            <p>
+              Profiles, messaging, and matching tools are meant to support real
+              conversations and long-term compatibility. If you want city- and
+              country-specific Filipina dating pages, those live deeper in the
+              site, while the homepage stays focused on the broader Cherry
+              Blossoms Asian dating brand.
+            </p>
+          </div>
+        </div>
+
+        <div class="overview-card__media">
+          <div class="image-card image-card--overview">
+            <img
+              src="https://www.blossoms.com/wp-content/uploads/2025/02/blossoms-dating-site-philippines-members.jpg"
+              alt="Asian online dating site in the Philippines"
+              loading="lazy"
+              decoding="async"
+            />
+            <div class="overview-card__caption">
+              <span>Editorial Selection</span>
+              <strong
+                >Real members. Relationship-first profiles. A platform built to
+                feel human.</strong
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="shell stats__grid">
+        {
+          stats.map((stat) => (
+            <article class="stat-card">
+              <div class="stat-card__value">{stat.value}</div>
+              <h3>{stat.label}</h3>
+              <p>{stat.description}</p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="pillars shell">
+      <div class="pillars__intro">
+        <p class="section-kicker">Core Reasons</p>
+        <h2>Why people choose Blossoms for serious dating</h2>
+      </div>
+
+      <div class="pillars__tabs" data-pillars>
+        <div
+          class="pillars__nav"
+          role="tablist"
+          aria-label="Homepage value panels"
+        >
+          {
+            pillars.map((pillar, index) => (
+              <button
+                class="pillars__tab"
+                type="button"
+                role="tab"
+                id={`tab-${pillar.id}`}
+                aria-controls={`panel-${pillar.id}`}
+                aria-selected={index === 0 ? "true" : "false"}
+                tabindex={index === 0 ? "0" : "-1"}
+                data-pillars-tab
+              >
+                {pillar.tab}
+              </button>
+            ))
+          }
+        </div>
+
+        <div class="pillars__panels">
+          {
+            pillars.map((pillar, index) => (
+              <article
+                class:list={["pillar-panel", index === 0 && "is-active"]}
+                role="tabpanel"
+                id={`panel-${pillar.id}`}
+                aria-labelledby={`tab-${pillar.id}`}
+                hidden={index === 0 ? undefined : true}
+                data-pillars-panel
+              >
+                <div class="stack">
+                  <h3>{pillar.title}</h3>
+                  <p>{pillar.body}</p>
+                  {pillar.id === "using" && (
+                    <div class="panel-actions">
+                      <a
+                        class="button-primary"
+                        href="https://members.blossoms.com/register.php"
+                        rel="nofollow"
+                      >
+                        Join Us
+                      </a>
+                      <a
+                        class="button-secondary"
+                        href="https://members.blossoms.com/login.php"
+                        rel="nofollow"
+                      >
+                        Login
+                      </a>
+                    </div>
+                  )}
+                </div>
+                <div class="pillar-panel__art" aria-hidden="true">
+                  <div class={`orb orb--${pillar.id}`} />
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="stories shell">
+      <div class="stories__intro">
+        <p class="section-kicker">Real People, Real Love</p>
+        <h2>Relationship stories from a long-running Asian dating community</h2>
+        <p>
+          Your journey to love should feel exciting and worry-free. Blossoms
+          prioritizes safety with verified profiles and privacy protection,
+          while helping you meet the right person with far more confidence than
+          generic dating platforms.
+        </p>
+        <div class="panel-actions">
+          <a class="button-primary" href="/blog/">Read the Journal</a>
+          <a class="button-secondary" href="/frequently-asked-questions/">
+            Browse FAQs
+          </a>
+        </div>
+        <a
+          class="store-badge"
+          href="https://play.google.com/store/apps/details?id=com.cherryblossoms.dating&pli=1"
+        >
+          <img
+            src="https://www.blossoms.com/wp-content/uploads/2025/03/get-blossoms-asian-dating-app-in-play-store.png"
+            alt="Get Blossoms Asian dating app in Play Store"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+      </div>
+
+      <div class="stories__cards">
+        <h3>Success Stories</h3>
+        {
+          testimonials.map((story) => (
+            <a class="story-card" href={story.href}>
+              <img
+                src={story.image}
+                alt={story.name}
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="story-card__body">
+                <p>{story.quote}</p>
+                <strong>{story.name}</strong>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="faq shell">
+      <div class="faq__copy">
+        <p class="section-kicker">Questions & Answers</p>
+        <h2>Asian dating FAQ for memberships, trust, and how Blossoms works</h2>
+        <p>
+          Trust is part of the product, which is why the site keeps a strong
+          help and reference layer. These common questions cover membership,
+          messaging, billing, profile setup, and safety expectations.
+        </p>
+
+        <div class="faq__items">
+          {
+            faqItems.map((item, index) => (
+              <details class="faq-item" open={index === 0}>
+                <summary>{item.question}</summary>
+                <p>{item.answer}</p>
+              </details>
+            ))
+          }
+        </div>
+      </div>
+
+      <aside class="faq__media" aria-hidden="true">
+        <img
+          class="faq__image"
+          src="https://www.blossoms.com/wp-content/uploads/2025/02/Depositphotos_230654110_XL-scaled.jpg"
+          alt="Asian online dating site Philippines"
+          loading="lazy"
+          decoding="async"
+        />
+      </aside>
+    </section>
+
+    <section class="locations shell" id="locations">
+      <div class="locations__intro">
+        <p class="section-kicker">Coverage</p>
+        <h2>
+          Explore Philippines city pages for people specifically looking for
+          Filipina dating by location
+        </h2>
+      </div>
+
+      <div class="locations__popular">
+        {
+          popularCities.map((city) => (
+            <a class="locations__pill" href={city.href}>
+              {city.label}
+            </a>
+          ))
+        }
+      </div>
+
+      <details class="locations__disclosure">
+        <summary>Browse supported cities and provinces</summary>
+        <div class="locations__grid">
+          {
+            locations.map((group) => (
+              <article class="location-card">
+                <h3>{group.province}</h3>
+                <ul>
+                  {group.cities.map((city) => (
+                    <li>
+                      <a href={city.href}>{city.label}</a>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))
+          }
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const root = document.querySelector("[data-pillars]");
+      if (!root) return;
+
+      const tabs = Array.from(root.querySelectorAll("[data-pillars-tab]"));
+      const panels = Array.from(root.querySelectorAll("[data-pillars-panel]"));
+
+      const activate = (index) => {
+        tabs.forEach((tab, tabIndex) => {
+          tab.setAttribute(
+            "aria-selected",
+            tabIndex === index ? "true" : "false",
+          );
+          tab.setAttribute("tabindex", tabIndex === index ? "0" : "-1");
+        });
+
+        panels.forEach((panel, panelIndex) => {
+          panel.classList.toggle("is-active", panelIndex === index);
+          panel.hidden = panelIndex !== index;
+        });
+      };
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => activate(index));
+        tab.addEventListener("keydown", (event) => {
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          event.preventDefault();
+          const nextIndex =
+            event.key === "ArrowRight"
+              ? (index + 1) % tabs.length
+              : (index - 1 + tabs.length) % tabs.length;
+          activate(nextIndex);
+          tabs[nextIndex]?.focus();
+        });
+      });
+    })();
+  </script>
+
+  <style>
+    .home-redesign {
+      --bg: #fff8f3;
+      --surface: rgba(255, 255, 255, 0.82);
+      --surface-strong: #ffffff;
+      --line: rgba(125, 58, 66, 0.12);
+      --ink: #24161c;
+      --muted: #67545b;
+      --accent: #df4b4b;
+      --accent-deep: #a42a34;
+      --accent-soft: #ffe0df;
+      --gold: #e6ae62;
+      background:
+        radial-gradient(
+          circle at top left,
+          rgba(255, 192, 173, 0.35),
+          transparent 28rem
+        ),
+        linear-gradient(180deg, #fff9f6 0%, #fff4ee 40%, #ffffff 100%);
+      color: var(--ink);
+    }
+
+    .home-redesign a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .shell {
+      width: min(1200px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .stack {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .section-kicker,
+    .eyebrow {
+      margin: 0;
+      color: var(--accent-deep);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      position: relative;
+      min-height: min(52rem, 100vh - 70px);
+      display: flex;
+      align-items: center;
+      overflow: clip;
+      isolation: isolate;
+      background:
+        linear-gradient(
+          90deg,
+          rgba(22, 12, 17, 0.82) 0%,
+          rgba(22, 12, 17, 0.42) 42%,
+          rgba(22, 12, 17, 0.24) 100%
+        ),
+        url("//www.blossoms.com/wp-content/uploads/2025/02/blossoms-asian-dating-site-philippines-2.jpg")
+          center/cover no-repeat;
+    }
+
+    .hero__backdrop {
+      display: none;
+    }
+
+    .hero__grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 2rem;
+      align-items: end;
+      padding: 4rem 0 4.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero__copy {
+      max-width: 42rem;
+      color: #fff8f3;
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2.75rem, 5vw, 5.5rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      color: white;
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 34rem;
+      color: rgba(255, 248, 243, 0.84);
+      font-size: 1.12rem;
+      line-height: 1.7;
+    }
+
+    .hero__checks {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.7rem;
+      color: rgba(255, 248, 243, 0.9);
+      font-size: 0.98rem;
+    }
+
+    .hero__checks li::before {
+      content: "✓";
+      color: #ffd494;
+      margin-right: 0.65rem;
+      font-weight: 700;
+    }
+
+    .hero__panel {
+      justify-self: end;
+      width: min(31rem, 100%);
+      padding: 1.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 1.75rem;
+      background: rgba(255, 250, 247, 0.18);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 2rem 5rem rgba(20, 10, 14, 0.28);
+      display: grid;
+      gap: 1rem;
+    }
+
+    .hero__badge {
+      justify-self: center;
+      padding: 0.55rem 1rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--accent-deep);
+      font-weight: 700;
+    }
+
+    .cta {
+      display: grid;
+      gap: 0.25rem;
+      padding: 1.15rem 1.2rem;
+      border-radius: 1.35rem;
+      transition:
+        transform 180ms ease,
+        box-shadow 180ms ease;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    }
+
+    .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 1.25rem 2rem rgba(39, 20, 28, 0.16);
+    }
+
+    .cta span {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .cta small {
+      font-size: 0.96rem;
+      color: #3f3136;
+    }
+
+    .cta--male {
+      background: linear-gradient(135deg, #d9e8ff, #b5d1ff);
+    }
+
+    .cta--female {
+      background: linear-gradient(135deg, #ffdce3, #ffc3d1);
+    }
+
+    .hero__login {
+      margin: 0.25rem 0 0;
+      text-align: center;
+      color: white;
+      font-weight: 600;
+    }
+
+    .hero__login a {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    .hero__microproof {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.55rem;
+    }
+
+    .hero__microproof span {
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: rgba(255, 248, 243, 0.92);
+      font-size: 0.8rem;
+      line-height: 1;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .featured,
+    .split,
+    .pillars,
+    .stories,
+    .faq,
+    .locations,
+    .about {
+      padding: 5.5rem 0;
+    }
+
+    .home-redesign section,
+    .home-redesign article,
+    .home-redesign aside,
+    .home-redesign details,
+    .home-redesign summary,
+    .home-redesign img,
+    .home-redesign video,
+    .home-redesign h1,
+    .home-redesign h2,
+    .home-redesign h3,
+    .home-redesign p,
+    .home-redesign li,
+    .home-redesign a {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .home-redesign section {
+      position: relative;
+      z-index: 1;
+    }
+
+    .featured,
+    .split,
+    .about,
+    .pillars,
+    .stories,
+    .faq,
+    .locations,
+    .stats {
+      background: transparent;
+    }
+
+    .featured__logo,
+    .trust-item,
+    .stat-card,
+    .pillar-panel,
+    .stories__intro,
+    .stories__cards,
+    .faq__copy,
+    .faq__items,
+    .location-card,
+    .locations__disclosure {
+      background: #fff !important;
+      opacity: 1 !important;
+    }
+
+    .featured h2,
+    .split h2,
+    .about h2,
+    .pillars h2,
+    .stories h2,
+    .faq h2,
+    .locations h2,
+    .stat-card h3,
+    .pillar-panel h3,
+    .story-card__body strong,
+    .location-card h3,
+    .faq-item summary,
+    .locations__disclosure > summary {
+      color: var(--ink) !important;
+    }
+
+    .split p,
+    .about p,
+    .about li,
+    .stories__intro p,
+    .story-card__body p,
+    .faq__copy p,
+    .faq-item p,
+    .location-card a,
+    .stat-card p,
+    .pillar-panel p {
+      color: var(--muted) !important;
+    }
+
+    .featured {
+      text-align: center;
+    }
+
+    .featured h2,
+    .split h2,
+    .pillars h2,
+    .stories h2,
+    .faq h2,
+    .locations h2,
+    .about h2 {
+      margin: 0.35rem 0 0;
+      font-size: clamp(2rem, 3.2vw, 3.4rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .featured__logos {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .featured__logo {
+      padding: 1.75rem;
+      border: 1px solid var(--line);
+      border-radius: 1.5rem;
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 1rem 2.5rem rgba(118, 59, 59, 0.08);
+    }
+
+    .featured__logo img {
+      width: 100%;
+      max-height: 4rem;
+      object-fit: contain;
+      filter: grayscale(1);
+      opacity: 0.75;
+      transition:
+        filter 180ms ease,
+        opacity 180ms ease,
+        transform 180ms ease;
+    }
+
+    .featured__logo:hover img {
+      filter: grayscale(0);
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .split p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 1.02rem;
+    }
+
+    .split--media {
+      width: min(1320px, calc(100% - 1rem));
+      padding: 5.5rem 0;
+    }
+
+    .video-hero {
+      position: relative;
+      min-height: 36rem;
+      border-radius: 2rem;
+      overflow: clip;
+      border: 1px solid var(--line);
+      box-shadow: 0 2rem 4rem rgba(137, 66, 77, 0.16);
+      background: #160c11;
+    }
+
+    .video-hero__media {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-hero__overlay {
+      position: relative;
+      z-index: 1;
+      min-height: 36rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: clamp(1.5rem, 3vw, 3rem);
+      background:
+        linear-gradient(
+          90deg,
+          rgba(20, 10, 14, 0.74) 0%,
+          rgba(20, 10, 14, 0.42) 34%,
+          rgba(20, 10, 14, 0.12) 66%,
+          rgba(20, 10, 14, 0.32) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(20, 10, 14, 0.08) 0%,
+          rgba(20, 10, 14, 0.18) 38%,
+          rgba(20, 10, 14, 0.62) 100%
+        );
+    }
+
+    .video-hero__content {
+      max-width: 34rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .video-hero .section-kicker {
+      color: rgba(255, 226, 193, 0.92);
+    }
+
+    .video-hero h2 {
+      color: #fff !important;
+      margin: 0.35rem 0 0;
+      max-width: 22rem;
+      text-wrap: balance;
+    }
+
+    .video-hero__lede {
+      margin: 0;
+      max-width: 30rem;
+      color: rgba(255, 241, 236, 0.9);
+      font-size: 1.02rem;
+      line-height: 1.75;
+      text-shadow: 0 0.1rem 0.8rem rgba(18, 8, 10, 0.24);
+    }
+
+    .video-hero .trust-list {
+      gap: 0.85rem;
+      margin: 0.35rem 0 0;
+      max-width: 31rem;
+    }
+
+    .video-hero .trust-item {
+      background: transparent !important;
+      backdrop-filter: none;
+      border-color: transparent;
+      box-shadow: none;
+      color: rgba(255, 244, 240, 0.96);
+      padding: 0.35rem 0;
+      border-radius: 0;
+    }
+
+    .video-hero .trust-item__icon {
+      width: 2.15rem;
+      height: 2.15rem;
+      background: transparent;
+      color: #ffb2a9;
+      border: none;
+    }
+
+    .video-hero__caption {
+      margin: 0;
+      max-width: 26rem;
+      align-self: flex-end;
+      padding: 0.9rem 1rem;
+      border-radius: 1.1rem;
+      background: rgba(24, 11, 16, 0.5);
+      border: 1px solid rgba(255, 224, 215, 0.14);
+      color: rgba(255, 242, 238, 0.88);
+      font-size: 0.95rem;
+      line-height: 1.65;
+      backdrop-filter: blur(10px);
+    }
+
+    .about__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.72fr);
+      gap: 1.5rem;
+      align-items: stretch;
+    }
+
+    .about__content,
+    .about__rail,
+    .overview-card {
+      border: 1px solid var(--line);
+      border-radius: 2rem;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.94),
+        rgba(255, 246, 241, 0.9)
+      );
+      box-shadow: 0 1.75rem 3.5rem rgba(121, 57, 67, 0.1);
+    }
+
+    .about__content {
+      padding: clamp(1.5rem, 3vw, 3rem);
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .about__content p {
+      margin: 0;
+      max-width: 48rem;
+      line-height: 1.8;
+    }
+
+    .about__list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .about__list li {
+      position: relative;
+      padding-left: 1.4rem;
+      line-height: 1.7;
+    }
+
+    .about__list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.7rem;
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      box-shadow: 0 0 0 0.25rem rgba(223, 75, 75, 0.12);
+    }
+
+    .about__rail {
+      padding: 1.35rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+      background:
+        radial-gradient(
+          circle at top right,
+          rgba(230, 174, 98, 0.18),
+          transparent 10rem
+        ),
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.98),
+          rgba(255, 244, 238, 0.96)
+        );
+    }
+
+    .about__seal {
+      padding: 1.5rem;
+      border-radius: 1.5rem;
+      background: linear-gradient(135deg, #2d171d, #6d2431);
+      color: #fff5ef;
+      display: grid;
+      gap: 0.25rem;
+      text-align: center;
+    }
+
+    .about__seal span {
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    .about__seal strong {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1;
+    }
+
+    .about__note,
+    .about__stats article {
+      border-radius: 1.35rem;
+      border: 1px solid rgba(125, 58, 66, 0.1);
+      background: rgba(255, 255, 255, 0.84);
+    }
+
+    .about__note {
+      padding: 1rem 1.1rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .about__note p {
+      margin: 0;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .about__note-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-deep) !important;
+    }
+
+    .about__stats {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .about__stats article {
+      padding: 1rem 1.1rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .about__stats strong {
+      font-size: 1.1rem;
+      color: var(--ink);
+    }
+
+    .about__stats span {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .split--image,
+    .platform {
+      width: min(1520px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 5.5rem 0;
+    }
+
+    .overview-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+      gap: clamp(2rem, 4vw, 5rem);
+      width: min(1380px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: clamp(2.5rem, 5vw, 4.5rem);
+      align-items: center;
+      position: relative;
+    }
+
+    .overview-card__copy {
+      max-width: none;
+      padding: 0;
+      display: grid;
+      gap: 1.4rem;
+    }
+
+    .overview-card__copy h2 {
+      margin: 0;
+      font-size: clamp(2rem, 3.8vw, 3.5rem);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      text-wrap: balance;
+      word-break: break-word;
+    }
+
+    .overview-card__body {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.2rem 1.6rem;
+      max-width: 48rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid rgba(125, 58, 66, 0.14);
+    }
+
+    .overview-card__body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.8;
+    }
+
+    .overview-card__actions {
+      display: grid;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .overview-card__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .overview-card__chips span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.35rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(125, 58, 66, 0.12);
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .overview-card__media {
+      display: block;
+    }
+
+    .image-card--overview {
+      width: 100%;
+      min-height: 0;
+      height: auto;
+      background: #fff;
+      border-radius: 1.75rem;
+      border: 1px solid rgba(125, 58, 66, 0.12);
+      box-shadow: 0 2rem 4rem rgba(121, 57, 67, 0.1);
+      overflow: hidden;
+    }
+
+    .image-card--overview img {
+      aspect-ratio: 4 / 4.6;
+      height: auto;
+      min-height: 0;
+      object-fit: cover;
+      object-position: center center;
+    }
+
+    .overview-card__caption {
+      display: grid;
+      gap: 0.45rem;
+      padding: 1rem 1.1rem 1.15rem;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 247, 243, 0.85),
+        rgba(255, 255, 255, 0.98)
+      );
+    }
+
+    .overview-card__caption span {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent-deep);
+    }
+
+    .overview-card__caption strong {
+      color: var(--ink);
+      font-size: 0.98rem;
+      line-height: 1.55;
+      font-weight: 600;
+    }
+
+    .video-card,
+    .image-card {
+      min-height: 100%;
+      border-radius: 2rem;
+      overflow: clip;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 2rem 4rem rgba(137, 66, 77, 0.12);
+    }
+
+    .video-card video,
+    .image-card img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 24rem;
+      object-fit: cover;
+    }
+
+    .trust-list {
+      display: grid;
+      gap: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .trust-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.9rem;
+      align-items: start;
+      padding: 1rem 1.1rem;
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--line);
+    }
+
+    .trust-item__icon {
+      display: inline-grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      font-weight: 700;
+    }
+
+    .trust-item p {
+      margin: 0;
+    }
+
+    .button-primary,
+    .button-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 3.25rem;
+      padding: 0.85rem 1.35rem;
+      border-radius: 999px;
+      font-weight: 700;
+      transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        background 180ms ease;
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: white;
+      box-shadow: 0 1rem 2rem rgba(164, 42, 52, 0.22);
+    }
+
+    .button-secondary {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--ink);
+    }
+
+    .button-primary:hover,
+    .button-secondary:hover {
+      transform: translateY(-2px);
+    }
+
+    .stats {
+      padding: 1rem 0 5rem;
+    }
+
+    .stats__grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      padding: 2rem 1.5rem;
+      border-radius: 1.75rem;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.9),
+        rgba(255, 248, 244, 0.9)
+      );
+      border: 1px solid var(--line);
+      text-align: center;
+      box-shadow: 0 1.2rem 2.4rem rgba(116, 54, 63, 0.08);
+    }
+
+    .stat-card__value {
+      width: 5.75rem;
+      aspect-ratio: 1;
+      margin: 0 auto 1rem;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 30% 30%, #fff3eb, #ffc9c3);
+      color: var(--accent-deep);
+      font-size: 1.45rem;
+      font-weight: 800;
+    }
+
+    .stat-card h3 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .stat-card p {
+      margin: 0.65rem 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .pillars__intro {
+      max-width: 44rem;
+      margin-bottom: 2rem;
+    }
+
+    .pillars__nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .pillars__tab {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.8rem 1rem;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .pillars__tab:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .pillars__tab[aria-selected="true"] {
+      background: var(--ink);
+      color: white;
+    }
+
+    .pillar-panel {
+      display: none;
+      grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.9fr);
+      gap: 2rem;
+      align-items: center;
+      padding: 2rem;
+      border-radius: 2rem;
+      border: 1px solid var(--line);
+      background: linear-gradient(
+        140deg,
+        rgba(255, 255, 255, 0.92),
+        rgba(255, 242, 238, 0.86)
+      );
+      box-shadow: 0 2rem 4rem rgba(121, 57, 67, 0.1);
+    }
+
+    .pillar-panel.is-active {
+      display: grid;
+      animation: fadeIn 500ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(1rem);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .pillar-panel h3 {
+      margin: 0;
+      font-size: clamp(1.7rem, 2.2vw, 2.5rem);
+      line-height: 1.1;
+    }
+
+    .pillar-panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .pillar-panel__art {
+      min-height: 18rem;
+      display: grid;
+      place-items: center;
+    }
+
+    .orb {
+      width: min(16rem, 100%);
+      aspect-ratio: 1;
+      border-radius: 38% 62% 58% 42% / 46% 36% 64% 54%;
+      box-shadow:
+        inset 0 0 4rem rgba(255, 255, 255, 0.5),
+        0 2rem 4rem rgba(151, 62, 75, 0.18);
+    }
+
+    .orb--different {
+      background: linear-gradient(135deg, #ffd7d2, #ffaeac);
+    }
+
+    .orb--using {
+      background: linear-gradient(135deg, #ffe9d1, #ffbf7b);
+    }
+
+    .orb--love {
+      background: linear-gradient(135deg, #ffe0e6, #ff95af);
+    }
+
+    .home-redesign .stories {
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .stories__intro,
+    .stories__cards,
+    .faq__copy,
+    .faq__items {
+      padding: 2rem;
+      border: 1px solid var(--line);
+      border-radius: 2rem;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 1.5rem 3rem rgba(121, 57, 67, 0.08);
+    }
+
+    .stories__intro {
+      display: grid;
+      align-content: start;
+      gap: 1rem;
+      min-height: 100%;
+    }
+
+    .stories__cards {
+      min-height: 100%;
+    }
+
+    .stories__intro p,
+    .faq__copy p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .store-badge {
+      display: inline-flex;
+      margin-top: 1rem;
+      max-width: 16rem;
+    }
+
+    .store-badge img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .stories__cards h3 {
+      margin: 0 0 1rem;
+      font-size: 1.55rem;
+    }
+
+    .story-card {
+      display: grid;
+      grid-template-columns: 6rem 1fr;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .story-card:first-of-type {
+      border-top: 0;
+      padding-top: 0.25rem;
+    }
+
+    .story-card img {
+      width: 6rem;
+      height: 6rem;
+      object-fit: cover;
+      border-radius: 1.25rem;
+    }
+
+    .story-card__body {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .story-card__body::before {
+      content: "“";
+      color: var(--accent);
+      font-size: 2.25rem;
+      line-height: 0.8;
+      font-family: Georgia, serif;
+    }
+
+    .story-card__body p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .faq {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.75fr);
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .faq__copy {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .faq__media {
+      position: sticky;
+      top: 1.5rem;
+      padding: 0.85rem;
+      border-radius: 2rem;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid var(--line);
+      box-shadow: 0 1.5rem 3rem rgba(121, 57, 67, 0.08);
+    }
+
+    .faq__image {
+      width: 100%;
+      border-radius: 1.5rem;
+      display: block;
+      object-fit: cover;
+      aspect-ratio: 1 / 1;
+    }
+
+    .faq__items {
+      display: grid;
+      gap: 0.85rem;
+      margin-top: 0.25rem;
+    }
+
+    .faq-item {
+      border: 1px solid var(--line);
+      border-radius: 1.1rem;
+      background: white;
+      overflow: clip;
+    }
+
+    .faq-item summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 1rem 1.1rem;
+      font-weight: 700;
+      line-height: 1.45;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-item summary::after {
+      content: "+";
+      flex: none;
+      width: 1.75rem;
+      height: 1.75rem;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .faq-item[open] summary::after {
+      content: "–";
+    }
+
+    .faq-item p {
+      margin: 0;
+      padding: 0 1.1rem 1rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .locations__intro {
+      max-width: 50rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .locations__disclosure {
+      border: 1px solid var(--line);
+      border-radius: 2rem;
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: 0 1.5rem 3rem rgba(121, 57, 67, 0.08);
+      overflow: clip;
+    }
+
+    .locations__popular {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      margin: 0 0 1.25rem;
+    }
+
+    .locations__pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.5rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .locations__pill:hover {
+      color: var(--accent-deep);
+      border-color: rgba(164, 42, 52, 0.2);
+      background: #fff;
+    }
+
+    .locations__disclosure > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 1.2rem 1.35rem;
+      font-weight: 700;
+      color: var(--accent-deep);
+      background: linear-gradient(
+        180deg,
+        rgba(255, 247, 244, 0.95),
+        rgba(255, 255, 255, 0.95)
+      );
+    }
+
+    .locations__disclosure > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .locations__grid {
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .location-card {
+      padding: 1rem;
+      border-radius: 1.25rem;
+      border: 1px solid var(--line);
+      background: white;
+    }
+
+    .location-card h3 {
+      margin: 0 0 0.8rem;
+      font-size: 1rem;
+      color: var(--accent-deep);
+    }
+
+    .location-card ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .location-card a {
+      color: var(--muted);
+    }
+
+    .location-card a:hover {
+      color: var(--accent-deep);
+    }
+
+    @media (max-width: 1120px) {
+      .locations__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .overview-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .hero__grid,
+      .split,
+      .about__grid,
+      .faq,
+      .pillar-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .video-hero,
+      .video-hero__overlay {
+        min-height: 30rem;
+      }
+
+      .video-hero__overlay {
+        gap: 1.5rem;
+      }
+
+      .video-hero__caption {
+        align-self: stretch;
+        max-width: none;
+      }
+
+      .hero__grid {
+        align-items: start;
+      }
+
+      .hero__panel {
+        justify-self: stretch;
+      }
+
+      .about__rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .about__seal {
+        grid-column: 1 / -1;
+      }
+
+      .featured__logos,
+      .stats__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .faq__media {
+        position: static;
+      }
+
+      .home-redesign .stories {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .locations__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 901px) {
+      .home-redesign .stories {
+        grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        min-height: auto;
+      }
+
+      .hero__backdrop {
+        background:
+          linear-gradient(
+            180deg,
+            rgba(22, 12, 17, 0.68) 0%,
+            rgba(22, 12, 17, 0.28) 100%
+          ),
+          url("//www.blossoms.com/wp-content/uploads/2025/07/medium-shot-smiley-woman-outdoors.jpg-768x1152.webp")
+            center top / cover no-repeat;
+      }
+
+      .hero__grid,
+      .featured,
+      .split,
+      .pillars,
+      .faq,
+      .locations,
+      .platform {
+        padding-top: 3.5rem;
+        padding-bottom: 3.5rem;
+      }
+
+      .split--image,
+      .platform {
+        width: min(100%, calc(100% - 1rem));
+      }
+
+      .overview-card {
+        width: min(100%, calc(100% - 1rem));
+      }
+
+      .split--media {
+        width: min(100%, calc(100% - 1rem));
+        padding-top: 3.5rem;
+        padding-bottom: 3.5rem;
+      }
+
+      .hero__grid {
+        gap: 1.25rem;
+      }
+
+      .video-hero,
+      .video-hero__overlay {
+        min-height: 26rem;
+      }
+
+      .video-hero__content {
+        max-width: none;
+      }
+
+      .video-hero h2 {
+        max-width: none;
+      }
+
+      .video-hero__lede {
+        font-size: 0.96rem;
+      }
+
+      .home-redesign .stories {
+        grid-template-columns: 1fr;
+      }
+
+      .about__rail {
+        grid-template-columns: 1fr;
+      }
+
+      .overview-card {
+        padding: 1.5rem;
+      }
+
+      .overview-card__copy {
+        padding: 0;
+      }
+
+      .overview-card__copy h2 {
+        max-width: none;
+        font-size: clamp(2rem, 9vw, 2.85rem);
+        line-height: 0.98;
+      }
+
+      .overview-card__body {
+        grid-template-columns: 1fr;
+        max-width: none;
+        gap: 1rem;
+      }
+
+      .overview-card__body p {
+        max-width: none;
+      }
+
+      .image-card--overview img {
+        min-height: 16rem;
+        aspect-ratio: 16 / 11;
+      }
+
+      .pillars__nav {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .hero__microproof {
+        gap: 0.45rem;
+      }
+
+      .stories__intro,
+      .stories__cards,
+      .faq__copy,
+      .faq__media,
+      .faq__items,
+      .pillar-panel {
+        padding: 1.25rem;
+      }
+
+      .story-card {
+        grid-template-columns: 1fr;
+      }
+
+      .story-card img {
+        width: 100%;
+        height: 14rem;
+      }
+
+      .locations__grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</SiteLayout>

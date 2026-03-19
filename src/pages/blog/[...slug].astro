@@ -1,0 +1,500 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import global from "../../data/global.json";
+import { listBlogPosts, type BlogPostRecord } from "../../lib/posts";
+import {
+  buildPostContent,
+  estimateReadingMinutes,
+  extractFirstImage,
+  extractHeadings,
+  mapRelatedPost,
+} from "../../lib/blog-page";
+import { toRelativeSiteUrl } from "../../lib/url-utils";
+import {
+  buildBlogPostingSchema,
+  buildBreadcrumbSchema,
+} from "../../lib/seo";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const posts = await listBlogPosts();
+
+  return posts.map((post) => ({
+    params: {
+      slug: post.route.replace(/^\/blog\//, "").replace(/\/$/, ""),
+    },
+    props: {
+      post,
+      relatedPosts: posts
+        .filter((entry) => entry.route !== post.route)
+        .slice(0, 3)
+        .map(mapRelatedPost),
+    },
+  }));
+}
+
+const { post, relatedPosts } = Astro.props as {
+  post: BlogPostRecord;
+  relatedPosts: ReturnType<typeof mapRelatedPost>[];
+};
+
+const title = post.seoTitle || `${post.title} | Cherry Blossoms`;
+const description =
+  post.seoDescription ||
+  post.excerpt ||
+  post.description ||
+  "Asian dating advice, relationship guidance, and Filipina dating insights from Cherry Blossoms.";
+const featuredImage = post.featuredImageUrl || extractFirstImage(post.contentHtml);
+const postContentHtml = buildPostContent(post.contentHtml, featuredImage || "");
+const postHeadings = extractHeadings(postContentHtml);
+const readingMinutes = estimateReadingMinutes(post.contentHtml);
+const schema = [
+  buildBlogPostingSchema({
+    title,
+    description,
+    url: post.route,
+    image: featuredImage,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt,
+  }),
+  buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog/" },
+    { name: post.title, url: post.route },
+  ]),
+];
+---
+
+<SiteLayout
+  title={title}
+  description={description}
+  canonical={toRelativeSiteUrl(post.route)}
+  bodyClass={global.bodyClass}
+  global={global}
+  seo={{
+    title,
+    description,
+    ogType: "article",
+    ogTitle: post.ogTitle || title,
+    ogDescription: post.ogDescription || description,
+    ogImage: featuredImage || undefined,
+    twitterTitle: post.twitterTitle || title,
+    twitterDescription: post.twitterDescription || description,
+    schema,
+  }}
+>
+  <section class="post-page">
+    <div class:list={["post-page__shell", !featuredImage && "post-page__shell--text-only"]}>
+      <div class:list={["post-page__hero", !featuredImage && "post-page__hero--text-only"]}>
+        <div class="post-page__intro">
+          <p class="post-page__eyebrow">Blossoms Journal</p>
+          <h1>{title}</h1>
+          <p class="post-page__lede">{description}</p>
+          <div class="post-page__meta">
+            <span>
+              {post.publishedAt &&
+                new Date(post.publishedAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+            </span>
+            <span>{readingMinutes} min read</span>
+          </div>
+        </div>
+
+        {featuredImage && (
+          <figure class="post-page__media">
+            <img src={featuredImage} alt={title} loading="eager" decoding="async" />
+          </figure>
+        )}
+      </div>
+
+      <div class:list={["post-page__content", !featuredImage && "post-page__content--text-only"]}>
+        {postHeadings.length > 1 && (
+          <aside class="post-page__rail">
+            <div class="post-toc">
+              <p>On this page</p>
+              <nav aria-label="Table of contents">
+                <ul>
+                  {postHeadings.map((heading) => (
+                    <li class:list={[heading.level === 3 && "is-sub"]}>
+                      <a href={`#${heading.id}`}>{heading.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+          </aside>
+        )}
+
+        <article class="post-article">
+          <Fragment set:html={postContentHtml} />
+        </article>
+      </div>
+
+      {relatedPosts.length > 0 && (
+        <section class="related-posts">
+          <div class="related-posts__heading">
+            <p>More from the journal</p>
+            <h2>Keep reading</h2>
+          </div>
+          <div class="related-posts__grid">
+            {relatedPosts.map((entry) => (
+              <article class="related-card">
+                {entry.image && (
+                  <img
+                    src={entry.image}
+                    alt={entry.title}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+                <div class="related-card__body">
+                  <p class="related-card__meta">
+                    {entry.date &&
+                      new Date(entry.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                  </p>
+                  <h3>
+                    <a href={entry.href}>{entry.title}</a>
+                  </h3>
+                  <p>{entry.excerpt}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .post-page {
+    padding: 3.5rem 0 5rem;
+    background:
+      radial-gradient(circle at top left, rgba(244, 67, 54, 0.12), transparent 24rem),
+      linear-gradient(180deg, #fff8f4 0%, #fffdfc 100%);
+  }
+
+  .post-page__shell {
+    width: min(1320px, calc(100% - 2rem));
+    margin: 0 auto;
+  }
+
+  .post-page__shell--text-only {
+    width: min(1480px, calc(100% - 2rem));
+  }
+
+  .post-page__hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
+    gap: clamp(1.75rem, 4vw, 4rem);
+    align-items: end;
+    margin-bottom: 2.75rem;
+  }
+
+  .post-page__hero--text-only {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 72rem;
+  }
+
+  .post-page__intro {
+    display: grid;
+    gap: 1rem;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .post-page__eyebrow,
+  .related-posts__heading p {
+    margin: 0;
+    color: #a42a34;
+    font: 700 0.78rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .post-page h1 {
+    margin: 0;
+    color: #23151a;
+    font-size: clamp(2.8rem, 5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+  }
+
+  .post-page__lede {
+    margin: 0;
+    max-width: 42rem;
+    color: #6c5860;
+    font-size: 1.08rem;
+    line-height: 1.8;
+  }
+
+  .post-page__hero--text-only .post-page__lede {
+    max-width: 56rem;
+  }
+
+  .post-page__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    justify-content: center;
+    color: #7f6169;
+    font: 600 0.85rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .post-page__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .post-page__meta span + span::before {
+    content: "";
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 999px;
+    background: rgba(164, 42, 52, 0.45);
+    margin-right: 0.4rem;
+  }
+
+  .post-page__media {
+    margin: 0;
+    overflow: clip;
+    border-radius: 2rem;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    box-shadow: 0 1.6rem 4rem rgba(121, 57, 67, 0.14);
+    background: #fff;
+  }
+
+  .post-page__media img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .post-page__content {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: start;
+  }
+
+  .post-page__content--text-only {
+    grid-template-columns: minmax(0, 12rem) minmax(0, 52rem);
+  }
+
+  .post-page__rail {
+    position: sticky;
+    top: 6.5rem;
+  }
+
+  .post-toc {
+    padding: 1.2rem 1.1rem;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.4rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1rem 2.2rem rgba(121, 57, 67, 0.08);
+  }
+
+  .post-toc p {
+    margin: 0 0 0.9rem;
+    color: #2a1b20;
+    font: 700 0.86rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .post-toc ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .post-toc li.is-sub {
+    padding-left: 0.9rem;
+  }
+
+  .post-toc a {
+    color: #6c5860;
+    text-decoration: none;
+    line-height: 1.45;
+  }
+
+  .post-toc a:hover {
+    color: #a42a34;
+  }
+
+  .post-article {
+    min-width: 0;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border: 1px solid rgba(125, 58, 66, 0.1);
+    border-radius: 1.8rem;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 1.2rem 3rem rgba(121, 57, 67, 0.09);
+  }
+
+  .post-article :global(h2),
+  .post-article :global(h3),
+  .post-article :global(h4) {
+    color: #23151a;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    scroll-margin-top: 7rem;
+  }
+
+  .post-article :global(h2) {
+    margin-top: 2.6rem;
+    font-size: clamp(2rem, 3vw, 2.8rem);
+  }
+
+  .post-article :global(h3) {
+    margin-top: 2rem;
+    font-size: clamp(1.45rem, 2vw, 1.9rem);
+  }
+
+  .post-article :global(p),
+  .post-article :global(li) {
+    color: #433239;
+    font-size: 1.05rem;
+    line-height: 1.9;
+  }
+
+  .post-article :global(figure) {
+    margin: 2rem 0;
+  }
+
+  .post-article :global(img) {
+    border-radius: 1.3rem;
+  }
+
+  .post-article :global(ul),
+  .post-article :global(ol) {
+    padding-left: 1.4rem;
+  }
+
+  .post-article :global(blockquote) {
+    margin: 2rem 0;
+    padding: 1.2rem 1.3rem;
+    border-left: 4px solid #f44336;
+    border-radius: 0 1rem 1rem 0;
+    background: rgba(244, 67, 54, 0.06);
+  }
+
+  .related-posts {
+    margin-top: 3rem;
+  }
+
+  .related-posts__heading {
+    margin-bottom: 1.1rem;
+  }
+
+  .related-posts__heading h2 {
+    margin: 0.25rem 0 0;
+    color: #23151a;
+    font-size: clamp(1.9rem, 3vw, 2.8rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .related-posts__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.2rem;
+  }
+
+  .related-card {
+    overflow: clip;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1.1rem 2.6rem rgba(121, 57, 67, 0.08);
+  }
+
+  .related-card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .related-card__body {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .related-card__meta {
+    margin: 0;
+    color: #8d6f78;
+    font: 600 0.76rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .related-card h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    line-height: 1.15;
+  }
+
+  .related-card h3 a {
+    color: #24161c;
+    text-decoration: none;
+  }
+
+  .related-card h3 a:hover {
+    color: #a42a34;
+  }
+
+  .related-card__body > p:last-child {
+    margin: 0;
+    color: #67545b;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 980px) {
+    .post-page__hero,
+    .post-page__content {
+      grid-template-columns: 1fr;
+    }
+
+    .related-posts__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .post-page__rail {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .post-page {
+      padding: 2.8rem 0 4rem;
+    }
+
+    .post-page__hero {
+      margin-bottom: 2rem;
+    }
+
+    .post-page__meta {
+      gap: 0.6rem;
+    }
+
+    .related-posts__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

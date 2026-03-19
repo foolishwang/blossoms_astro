@@ -1,0 +1,69 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import global from "../data/global.json";
+---
+<SiteLayout
+  title="Page Not Found | Cherry Blossoms"
+  description="The page you requested could not be found."
+  canonical="/404/"
+  global={global}
+  seo={{ robots: { index: "noindex", follow: "nofollow" } }}
+>
+  <section class="not-found">
+    <div class="not-found__inner">
+      <p class="not-found__eyebrow">404</p>
+      <h1>Page not found</h1>
+      <p>The page you requested does not exist or may have moved.</p>
+      <a href="/">Return to home</a>
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .not-found {
+    min-height: 60vh;
+    display: grid;
+    place-items: center;
+    padding: 48px 24px;
+    background:
+      radial-gradient(circle at top, rgba(197, 42, 82, 0.12), transparent 36%),
+      linear-gradient(180deg, #fff8fa 0%, #ffffff 100%);
+  }
+
+  .not-found__inner {
+    max-width: 640px;
+    text-align: center;
+    display: grid;
+    gap: 16px;
+  }
+
+  .not-found__eyebrow {
+    color: #a11d39;
+    font: 700 0.85rem/1 Raleway, Arial, sans-serif;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+
+  .not-found h1 {
+    margin: 0;
+    color: #2a1a21;
+    font: 700 clamp(2.5rem, 6vw, 4.5rem)/0.95 Georgia, "Times New Roman", serif;
+  }
+
+  .not-found p {
+    margin: 0;
+    color: #5f5660;
+    font-size: 1.05rem;
+  }
+
+  .not-found a {
+    justify-self: center;
+    margin-top: 8px;
+    padding: 12px 20px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, #9e1834, #c83b60);
+    font: 600 0.95rem/1 Raleway, Arial, sans-serif;
+  }
+</style>

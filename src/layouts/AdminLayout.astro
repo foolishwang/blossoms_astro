@@ -1,0 +1,111 @@
+---
+const { title = "Blossoms Admin" } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="admin-brand" href="/admin/posts/">
+          <span>Blossoms</span>
+          <strong>Admin</strong>
+        </a>
+
+        <nav class="admin-nav">
+          <a href="/admin/posts/">All posts</a>
+          <a href="/admin/posts/new/">New post</a>
+          <a href="/blog/" target="_blank" rel="noreferrer">View blog</a>
+        </nav>
+
+        <button id="logout-button" class="admin-logout" type="button">Sign out</button>
+      </aside>
+
+      <main class="admin-main">
+        <slot />
+      </main>
+    </div>
+
+    <script type="module">
+      import "/src/scripts/admin-layout.ts";
+    </script>
+  </body>
+</html>
+
+<style>
+  :root {
+    color-scheme: light;
+  }
+  body {
+    margin: 0;
+    font-family: Poppins, sans-serif;
+    background: linear-gradient(180deg, #fff8f4 0%, #fffdfc 100%);
+    color: #24161c;
+  }
+  .admin-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 18rem minmax(0, 1fr);
+  }
+  .admin-sidebar {
+    display: grid;
+    align-content: start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border-right: 1px solid rgba(125, 58, 66, 0.12);
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(18px);
+  }
+  .admin-brand {
+    display: grid;
+    text-decoration: none;
+    color: #24161c;
+  }
+  .admin-brand span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #a42a34;
+  }
+  .admin-brand strong {
+    font: 700 2rem/0.95 Raleway, serif;
+    letter-spacing: -0.04em;
+  }
+  .admin-nav {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .admin-nav a,
+  .admin-logout {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1rem;
+    background: #fff;
+    color: #24161c;
+    font: 600 0.95rem/1 Poppins, sans-serif;
+    text-decoration: none;
+  }
+  .admin-logout {
+    cursor: pointer;
+  }
+  .admin-main {
+    padding: 1.5rem;
+  }
+  @media (max-width: 900px) {
+    .admin-shell {
+      grid-template-columns: 1fr;
+    }
+    .admin-sidebar {
+      border-right: 0;
+      border-bottom: 1px solid rgba(125, 58, 66, 0.12);
+    }
+  }
+</style>

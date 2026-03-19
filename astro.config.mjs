@@ -1,0 +1,11 @@
+import { defineConfig } from "astro/config";
+import node from "@astrojs/node";
+
+export default defineConfig({
+  site: "https://www.blossoms.com",
+  output: "server",
+  adapter: node({
+    mode: "standalone"
+  }),
+  trailingSlash: "ignore"
+});

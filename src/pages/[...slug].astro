@@ -1,0 +1,3227 @@
+---
+import routes from "../data/routes.json";
+import global from "../data/global.json";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { normalizeInternalHrefHtml, toRelativeSiteUrl } from "../lib/url-utils";
+import { getBlogPostByRoute, listBlogPosts } from "../lib/posts";
+import {
+  buildBreadcrumbSchema,
+  buildFaqSchema,
+  buildWebPageSchema,
+} from "../lib/seo";
+
+const BLOSSOMS_ORIGIN = "https://www.blossoms.com";
+export const prerender = false;
+
+const pathname = new URL(Astro.request.url).pathname;
+const currentRoute = pathname.endsWith("/") ? pathname : `${pathname}/`;
+const routeEntry = routes.find((route) => route.route === currentRoute) || null;
+const dbPost =
+  currentRoute.startsWith("/blog/") && currentRoute !== "/blog/"
+    ? await getBlogPostByRoute(currentRoute)
+    : null;
+const entry = dbPost
+  ? {
+      route: dbPost.route,
+      link: dbPost.route,
+      kind: dbPost.kind,
+      title: dbPost.title,
+      excerptText: dbPost.excerpt,
+      description: dbPost.description,
+      content: dbPost.contentHtml,
+      date: dbPost.publishedAt,
+      modified: dbPost.updatedAt,
+      seo: {
+        title: dbPost.seoTitle,
+        description: dbPost.seoDescription,
+        ogTitle: dbPost.ogTitle,
+        ogDescription: dbPost.ogDescription,
+        twitterTitle: dbPost.twitterTitle,
+        twitterDescription: dbPost.twitterDescription,
+      },
+    }
+  : routeEntry;
+
+const notFound = !entry;
+if (notFound) {
+  Astro.response.status = 404;
+}
+const safeEntry = entry || {
+  route: currentRoute,
+  link: currentRoute,
+  kind: "page",
+  title: "Page Not Found",
+  excerptText: "",
+  description: "",
+  content:
+    "<h1>Page not found</h1><p>The requested page could not be found.</p>",
+  seo: {
+    title: "Page Not Found",
+    description: "",
+  },
+};
+
+const title = safeEntry.title;
+const description = safeEntry.excerptText || global.siteTitle;
+const isBlogIndex = safeEntry.route === "/blog/";
+const isBlogPost = safeEntry.kind === "post";
+
+function absolutizeBlossomsAssets(content = "") {
+  return content
+    .replaceAll(
+      'src="/wp-content/uploads/',
+      `src="${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      "src='/wp-content/uploads/",
+      `src='${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      'href="/wp-content/uploads/',
+      `href="${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      "href='/wp-content/uploads/",
+      `href='${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      'poster="/wp-content/uploads/',
+      `poster="${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      "poster='/wp-content/uploads/",
+      `poster='${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      "url('/wp-content/uploads/",
+      `url('${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      'url("/wp-content/uploads/',
+      `url("${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replaceAll(
+      "url(/wp-content/uploads/",
+      `url(${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
+    )
+    .replace(/(?<!:)\/\/www\.blossoms\.com\//g, "https://www.blossoms.com/");
+}
+
+function decodeHtml(value = "") {
+  return value
+    .replaceAll("&#038;", "&")
+    .replaceAll("&#8211;", "–")
+    .replaceAll("&#8217;", "'")
+    .replaceAll("&#8220;", '"')
+    .replaceAll("&#8221;", '"')
+    .replaceAll("&#8230;", "...")
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'");
+}
+
+function stripTags(value = "") {
+  return decodeHtml(
+    value
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+}
+
+function slugify(value = "") {
+  return value
+    .toLowerCase()
+    .replace(/&amp;/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function extractFirstImage(content = "") {
+  const pictureMatch = absolutizeBlossomsAssets(content).match(
+    /<img[^>]+src="([^"]+)"/i,
+  );
+  return pictureMatch?.[1] || "";
+}
+
+function removeLeadFigure(content = "", featuredImage = "") {
+  if (!featuredImage) return content;
+  return content.replace(
+    new RegExp(
+      `<figure[^>]*>[\\s\\S]*?<img[^>]+src=["']${featuredImage.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][\\s\\S]*?<\\/figure>\\s*`,
+      "i",
+    ),
+    "",
+  );
+}
+
+function addHeadingAnchors(content = "") {
+  return content.replace(
+    /<h([23])([^>]*)>([\s\S]*?)<\/h\1>/gi,
+    (match, level, attrs, inner) => {
+      if (/id=/.test(attrs)) return match;
+      const text = stripTags(inner);
+      const id = slugify(text);
+      if (!id) return match;
+      return `<h${level}${attrs} id="${id}">${inner}</h${level}>`;
+    },
+  );
+}
+
+function upgradeNumberedLeadParagraphs(content = "") {
+  return content.replace(
+    /<p>\s*<strong>\s*((?:\d+|[A-Z])[\.\):]\s*[\s\S]*?)<\/strong>\s*<\/p>/gi,
+    (_match, inner) => {
+      const text = stripTags(inner).trim();
+      if (!text || text.length > 140) return _match;
+      return `<h2>${inner.trim()}</h2>`;
+    },
+  );
+}
+
+function extractHeadings(content = "") {
+  return [
+    ...content.matchAll(/<h([23])[^>]*id="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/gi),
+  ].map((match) => ({
+    level: Number(match[1]),
+    id: match[2],
+    text: stripTags(match[3]),
+  }));
+}
+
+function estimateReadingMinutes(content = "") {
+  const words = stripTags(content).split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 220));
+}
+
+function stripNonContentMarkup(content = "") {
+  return content
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, "");
+}
+
+function extractBackgroundImage(content = "") {
+  const match = absolutizeBlossomsAssets(content).match(
+    /background-image:url\(['"]?([^'")]+)['"]?\)/i,
+  );
+  return match?.[1] || "";
+}
+
+function extractParagraphs(content = "") {
+  return [...stripNonContentMarkup(content).matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => stripTags(match[1]))
+    .map((text) => text.trim())
+    .filter((text) => text.length > 60);
+}
+
+function extractListItems(content = "") {
+  return [...stripNonContentMarkup(content).matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
+    .map((match) => stripTags(match[1]))
+    .map((text) => text.trim())
+    .filter(Boolean);
+}
+
+function extractSemanticBlocks(content = "", limit = 12) {
+  return [...stripNonContentMarkup(content).matchAll(/<(h2|h3|p|ul|ol)[^>]*>[\s\S]*?<\/\1>/gi)]
+    .map((match) => match[0].trim())
+    .filter((block) => stripTags(block).trim().length > 0)
+    .slice(0, limit)
+    .join("\n");
+}
+
+function extractStatCards(content = "") {
+  return [...content.matchAll(/<circle>\s*<h5>([\s\S]*?)<\/h5>\s*<\/circle>[\s\S]*?<h3[^>]*>([\s\S]*?)<\/h3>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/gi)]
+    .slice(0, 3)
+    .map((match) => ({
+      value: stripTags(match[1]),
+      label: stripTags(match[2]),
+      detail: stripTags(match[3]),
+    }));
+}
+
+function extractFaqItems(content = "") {
+  const sanitized = stripNonContentMarkup(content);
+  const questions = [
+    ...sanitized.matchAll(
+      /<span[^>]*class="[^"]*kt-blocks-accordion-title[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
+    ),
+  ].map((match) => stripTags(match[1]));
+  const answers = [
+    ...sanitized.matchAll(
+      /<div class="kt-accordion-panel-inner"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/gi,
+    ),
+  ].map((match) => stripTags(stripNonContentMarkup(match[1])));
+
+  return questions
+    .map((question, index) => ({
+      question,
+      answer: answers[index] || "",
+      id: slugify(question) || `faq-${index + 1}`,
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
+function getFaqCategory(question = "") {
+  const normalized = decodeHtml(question).toLowerCase();
+
+  if (
+    /site called|what is filipino dating|filipino dating on blossoms|exclusively cater|blossoms dating legit|site work|pinays|mail-order bride/i.test(
+      normalized,
+    )
+  ) {
+    return "About Blossoms";
+  }
+
+  if (
+    /member and a subscriber|free|catch|login|password|log out|set up a profile|pay to set up a profile|age restrictions|mobile device|mobile app/i.test(
+      normalized,
+    )
+  ) {
+    return "Account & Membership";
+  }
+
+  if (
+    /profile|photo|username|personal information|relationship status|job|education|children|married individuals|transgender/i.test(
+      normalized,
+    )
+  ) {
+    return "Profile & Identity";
+  }
+
+  if (
+    /search|specific member|search results|filter|refine my matches|favorite|last online/i.test(
+      normalized,
+    )
+  ) {
+    return "Search & Matching";
+  }
+
+  if (
+    /contact another member|reply|copy and paste|receive messages|stop receiving messages|message i sent|delete messages|conversation|responding to my messages|phone number|social media/i.test(
+      normalized,
+    )
+  ) {
+    return "Messaging";
+  }
+
+  if (
+    /cost to subscribe|how can i pay|credit card|subscription|renewed automatically|refund/i.test(
+      normalized,
+    )
+  ) {
+    return "Billing & Subscription";
+  }
+
+  if (
+    /report someone|block someone|verify my identity|safety tips|verification process|fake profile|privacy|guidelines|rules for communication|protect my personal information|trust the information/i.test(
+      normalized,
+    )
+  ) {
+    return "Safety & Trust";
+  }
+
+  if (
+    /technical issues|bugs|customer support|helpline|forgot my password|not receiving any messages|can.t upload a photo|logged out|unable to access|displaying incorrectly|hacked or compromised|site\/app/i.test(
+      normalized,
+    )
+  ) {
+    return "Technical Help";
+  }
+
+  return "More Questions";
+}
+
+function splitLabelledListItem(item = "") {
+  const decoded = decodeHtml(item).replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  const match = decoded.match(/^([^:]+):\s*(.+)$/);
+  if (!match) {
+    return { label: decoded, detail: "" };
+  }
+  return {
+    label: match[1].trim(),
+    detail: match[2].trim(),
+  };
+}
+
+const featuredImage = isBlogPost
+  ? extractFirstImage(safeEntry.content || "")
+  : "";
+const postContentHtml = isBlogPost
+  ? addHeadingAnchors(
+      absolutizeBlossomsAssets(
+        normalizeInternalHrefHtml(
+          upgradeNumberedLeadParagraphs(
+            removeLeadFigure(safeEntry.content || "", featuredImage),
+          ),
+        ),
+      ),
+    )
+  : "";
+const normalizedContent = isBlogPost
+  ? postContentHtml
+  : absolutizeBlossomsAssets(normalizeInternalHrefHtml(safeEntry.content));
+const postHeadings = isBlogPost ? extractHeadings(postContentHtml) : [];
+const readingMinutes = isBlogPost
+  ? estimateReadingMinutes(safeEntry.content || "")
+  : 0;
+const isAboutPage = !isBlogPost && !isBlogIndex && safeEntry.route === "/about-us/";
+const aboutImages = isAboutPage
+  ? [...new Set([...absolutizeBlossomsAssets(safeEntry.content || "").matchAll(/<img[^>]+src="([^"]+)"/gi)].map((match) => match[1]))]
+      .filter((image) => !image.includes("medium-shot-smiley-woman-outdoors-682x1024.jpg"))
+      .slice(0, 4)
+  : [];
+const aboutHeadings = isAboutPage
+  ? [...stripNonContentMarkup(safeEntry.content || "").matchAll(/<h([2-3])[^>]*>([\s\S]*?)<\/h\1>/gi)]
+      .map((match) => stripTags(match[2]))
+      .filter(Boolean)
+      .slice(0, 4)
+  : [];
+const aboutParagraphs = isAboutPage ? extractParagraphs(safeEntry.content || "") : [];
+const aboutStats = isAboutPage
+  ? [
+      { value: "1974", label: "Founded", detail: "Started as Rainbow Ridge before becoming Cherry Blossoms online." },
+      { value: "50+", label: "Years", detail: "Decades of matchmaking history across pen-pal, web, and mobile eras." },
+      { value: "Global", label: "Reach", detail: "Built to connect international members with Filipina and Asian singles." },
+    ]
+  : [];
+const aboutMilestones = isAboutPage
+  ? [
+      {
+        year: "1974",
+        title: "Founded as Rainbow Ridge",
+        detail:
+          aboutParagraphs.find((paragraph) => /1974|Rainbow Ridge/i.test(paragraph)) ||
+          "The company began long before swipe-era dating, with a cross-border matchmaking model built on correspondence and real introductions.",
+      },
+      {
+        year: "Early web",
+        title: "From pen-pal era to digital matchmaking",
+        detail:
+          aboutParagraphs.find((paragraph) => /internet|online|web/i.test(paragraph)) ||
+          "Blossoms adapted its model for the web without abandoning the human-centered approach that made it credible in the first place.",
+      },
+      {
+        year: "Today",
+        title: "A legacy brand still in motion",
+        detail:
+          aboutParagraphs.find((paragraph) => /mobile|today|platform|community/i.test(paragraph)) ||
+          "The platform continues evolving across mobile, moderation, and discovery tools while staying anchored in trust and long-term intent.",
+      },
+    ]
+  : [];
+const aboutPrinciples = isAboutPage
+  ? [
+      "Longevity matters when trust is the product.",
+      "Real introductions beat disposable engagement loops.",
+      "Human moderation and integrity still matter in modern dating.",
+      "The brand evolves, but the promise stays simple: meaningful connection.",
+    ]
+  : [];
+const aboutBodyHtml = isAboutPage
+  ? absolutizeBlossomsAssets(
+      normalizeInternalHrefHtml(extractSemanticBlocks(safeEntry.content || "", 18)),
+    )
+  : "";
+const isFaqPage =
+  !isBlogPost &&
+  !isBlogIndex &&
+  safeEntry.route === "/frequently-asked-questions/";
+const faqHeroImage = isFaqPage
+  ? extractBackgroundImage(safeEntry.content || "") || extractFirstImage(safeEntry.content || "")
+  : "";
+const faqItems = isFaqPage ? extractFaqItems(safeEntry.content || "") : [];
+const faqCategoryOrder = [
+  "About Blossoms",
+  "Account & Membership",
+  "Profile & Identity",
+  "Search & Matching",
+  "Messaging",
+  "Billing & Subscription",
+  "Safety & Trust",
+  "Technical Help",
+  "More Questions",
+];
+const faqGroups = isFaqPage
+  ? faqCategoryOrder
+      .map((name) => ({
+        name,
+        items: faqItems.filter((item) => getFaqCategory(item.question) === name),
+      }))
+      .filter((group) => group.items.length > 0)
+  : [];
+const faqFeatured = isFaqPage
+  ? [
+      /legit/i,
+      /site work/i,
+      /member and a subscriber/i,
+      /cost to subscribe/i,
+      /report someone/i,
+      /technical issues/i,
+    ]
+      .map((pattern) => faqItems.find((item) => pattern.test(decodeHtml(item.question))))
+      .filter(Boolean)
+      .filter((item, index, items) => items.findIndex((entry) => entry?.id === item?.id) === index)
+  : [];
+const faqIntroParagraphs = isFaqPage
+  ? [
+      faqItems.find((item) => /site work/i.test(decodeHtml(item.question)))?.answer,
+      faqItems.find((item) => /privacy|report someone|verify my identity/i.test(decodeHtml(item.question)))?.answer,
+    ].filter(Boolean)
+  : [];
+const isDatingSafetyPage =
+  !isBlogPost &&
+  !isBlogIndex &&
+  safeEntry.route === "/dating-safety/";
+const safetyHeroImage = isDatingSafetyPage
+  ? extractBackgroundImage(safeEntry.content || "") || extractFirstImage(safeEntry.content || "")
+  : "";
+const safetyParagraphs = isDatingSafetyPage ? extractParagraphs(safeEntry.content || "") : [];
+const safetyListItems = isDatingSafetyPage ? extractListItems(safeEntry.content || "") : [];
+const safetyPrinciples = isDatingSafetyPage
+  ? [
+      {
+        title: "Never send money",
+        body:
+          safetyParagraphs.find((paragraph) => /send money|financial information/i.test(paragraph)) ||
+          "If someone you met online asks for money, banking details, or urgent financial help, stop the interaction immediately.",
+      },
+      {
+        title: "Protect your identity",
+        body:
+          safetyParagraphs.find((paragraph) => /personal information|full name|address/i.test(paragraph)) ||
+          "Keep sensitive information private until trust is real and verified, not just emotionally persuasive.",
+      },
+      {
+        title: "Stay on-platform first",
+        body:
+          safetyParagraphs.find((paragraph) => /Staying on the site|staying on Blossoms Dating/i.test(paragraph)) ||
+          "Platform messaging gives you reporting tools, moderation support, and a safer boundary while trust is still being established.",
+      },
+      {
+        title: "Report suspicious behavior",
+        body:
+          safetyParagraphs.find((paragraph) => /report them|Support Team|law enforcement/i.test(paragraph)) ||
+          "Fraud, harassment, impersonation, and coercive behavior should be reported early, not after escalation.",
+      },
+    ]
+  : [];
+const safetyRiskSignals = isDatingSafetyPage
+  ? safetyListItems
+      .filter((item) => /Scams and fraud|Harassment or abuse|Illegal activity|Catfishing|Spamming|Underage users/i.test(decodeHtml(item)))
+      .slice(0, 6)
+      .map(splitLabelledListItem)
+  : [];
+const safetyResourceCards = isDatingSafetyPage
+  ? safetyListItems
+      .filter((item) => /Support Team|Law enforcement|Hotline|Cybercrime|PNP|CFO|Gabriela|PTRAC/i.test(decodeHtml(item)))
+      .slice(0, 7)
+      .map(splitLabelledListItem)
+  : [];
+const safetyBodyHtml = isDatingSafetyPage
+  ? absolutizeBlossomsAssets(
+      normalizeInternalHrefHtml(extractSemanticBlocks(safeEntry.content || "", 18)),
+    )
+  : "";
+const isLocationDatingPage =
+  !isBlogPost &&
+  !isBlogIndex &&
+  /-online-dating-website\/$/.test(safeEntry.route);
+const locationName = isLocationDatingPage
+  ? title.replace(/\s+Dating Site$/i, "")
+  : "";
+const locationHeroImage = isLocationDatingPage
+  ? extractBackgroundImage(safeEntry.content || "") || extractFirstImage(safeEntry.content || "")
+  : "";
+const locationParagraphs = isLocationDatingPage
+  ? extractParagraphs(safeEntry.content || "")
+  : [];
+const locationListItems = isLocationDatingPage
+  ? [...new Set(extractListItems(safeEntry.content || ""))].slice(0, 6)
+  : [];
+const locationStatCards = isLocationDatingPage
+  ? extractStatCards(safeEntry.content || "")
+  : [];
+const locationBodyHtml = isLocationDatingPage
+  ? absolutizeBlossomsAssets(
+      normalizeInternalHrefHtml(extractSemanticBlocks(safeEntry.content || "")),
+    )
+  : "";
+const runtimeBlogPosts = currentRoute.startsWith("/blog/")
+  ? await listBlogPosts()
+  : [];
+const fallbackBlogPosts = routes
+  .filter((route) => route.kind === "post")
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  .map((post) => ({
+    title: stripTags(post.title || ""),
+    href: post.route,
+    date: post.date,
+    excerpt: stripTags(post.excerptText || post.excerpt || "").slice(0, 190),
+    image: extractFirstImage(post.content || ""),
+  }));
+const blogPosts = isBlogIndex
+  ? runtimeBlogPosts.length
+    ? runtimeBlogPosts.map((post) => ({
+        title: post.title,
+        href: post.route,
+        date: post.publishedAt || post.updatedAt,
+        excerpt: stripTags(post.excerpt || post.description).slice(0, 190),
+        image: post.featuredImageUrl || extractFirstImage(post.contentHtml),
+      }))
+    : fallbackBlogPosts
+  : [];
+const relatedPosts = isBlogPost
+  ? runtimeBlogPosts.length
+    ? runtimeBlogPosts
+        .filter((post) => post.route !== safeEntry.route)
+        .slice(0, 3)
+        .map((post) => ({
+          title: post.title,
+          href: post.route,
+          date: post.publishedAt || post.updatedAt,
+          excerpt: stripTags(post.excerpt || post.description).slice(0, 150),
+          image: post.featuredImageUrl || extractFirstImage(post.contentHtml),
+        }))
+    : fallbackBlogPosts
+        .filter((post) => post.href !== safeEntry.route)
+        .slice(0, 3)
+  : [];
+const pageSchema = (() => {
+  if (isBlogPost || isBlogIndex) return [];
+
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    ...(safeEntry.route !== "/" ? [{ name: stripTags(safeEntry.title || title), url: safeEntry.route }] : []),
+  ];
+
+  if (isAboutPage) {
+    return [
+      buildWebPageSchema({
+        title,
+        description,
+        url: safeEntry.route,
+        type: "AboutPage",
+      }),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  if (isFaqPage) {
+    return [
+      buildWebPageSchema({
+        title,
+        description,
+        url: safeEntry.route,
+        type: "FAQPage",
+      }),
+      buildFaqSchema(
+        faqItems.slice(0, 20).map((item) => ({
+          question: decodeHtml(item.question),
+          answer: item.answer,
+        })),
+      ),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  if (isDatingSafetyPage) {
+    return [
+      buildWebPageSchema({
+        title,
+        description,
+        url: safeEntry.route,
+      }),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  if (isLocationDatingPage) {
+    return [
+      buildWebPageSchema({
+        title,
+        description,
+        url: safeEntry.route,
+      }),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  return [
+    buildWebPageSchema({
+      title,
+      description,
+      url: safeEntry.route,
+    }),
+    ...(safeEntry.route !== "/" ? [buildBreadcrumbSchema(breadcrumbs)] : []),
+  ];
+})();
+const metaTitle = (() => {
+  if (isAboutPage) return "About Cherry Blossoms | Asian Dating Brand Since 1974";
+  if (isFaqPage) return "Asian Dating FAQs | Cherry Blossoms Help Center";
+  if (isDatingSafetyPage) return "Asian Dating Safety Tips | Cherry Blossoms";
+  if (isLocationDatingPage) return `${locationName} Filipina Dating Site | Cherry Blossoms`;
+  return safeEntry.seo?.title || title;
+})();
+const metaDescription = (() => {
+  if (isAboutPage) {
+    return "Learn about Cherry Blossoms, an Asian dating brand serving international singles since 1974 with a focus on trust, long-term relationships, and meaningful connections.";
+  }
+  if (isFaqPage) {
+    return "Find answers about Cherry Blossoms, Asian dating memberships, profiles, messaging, billing, safety, and technical support in one organized FAQ guide.";
+  }
+  if (isDatingSafetyPage) {
+    return "Read Cherry Blossoms dating safety tips for Asian dating, including scam prevention, privacy protection, reporting suspicious behavior, and support resources.";
+  }
+  if (isLocationDatingPage) {
+    return `Meet Filipina singles in ${locationName} with Cherry Blossoms. Explore ${locationName} Filipina dating, trusted profiles, and long-term relationship opportunities.`;
+  }
+  return safeEntry.seo?.description || safeEntry.excerptText || global.siteTitle;
+})();
+const resolvedSeo = {
+  ...(safeEntry.seo || {}),
+  title: metaTitle,
+  description: metaDescription,
+  ogTitle: safeEntry.seo?.ogTitle || metaTitle,
+  ogDescription: safeEntry.seo?.ogDescription || metaDescription,
+  twitterTitle: safeEntry.seo?.twitterTitle || metaTitle,
+  twitterDescription: safeEntry.seo?.twitterDescription || metaDescription,
+  schema: pageSchema,
+};
+---
+
+<SiteLayout
+  title={metaTitle}
+  description={metaDescription}
+  canonical={toRelativeSiteUrl(safeEntry.link)}
+  bodyClass={global.bodyClass}
+  global={global}
+  seo={resolvedSeo}
+>
+  {
+    isBlogIndex ? (
+      <section class="blog-index">
+        <div class="blog-index__shell">
+          <div class="blog-index__hero">
+            <p class="blog-index__eyebrow">Blossoms Journal</p>
+            <h1>
+              Dating advice, safety guidance, and real relationship stories.
+            </h1>
+            <p class="blog-index__lede">
+              Browse practical posts on Filipina dating, long-distance
+              relationships, cultural insights, and online dating safety from
+              the Blossoms archive.
+            </p>
+          </div>
+
+          <div class="blog-index__grid">
+            {blogPosts.map((post) => (
+              <article class="blog-card">
+                {post.image && (
+                  <a href={post.href} aria-label={`Read ${post.title}`}>
+                    <img
+                      src={post.image}
+                      alt={post.title}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </a>
+                )}
+                <div class="blog-card__body">
+                  <p class="blog-card__meta">
+                    {new Date(post.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                  <h2>
+                    <a href={post.href}>{post.title}</a>
+                  </h2>
+                  <p>{post.excerpt}</p>
+                  <a class="blog-card__link" href={post.href}>
+                    Read article
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    ) : (
+      <>
+        {isBlogPost ? (
+          <section class="post-page">
+            <div class:list={["post-page__shell", !featuredImage && "post-page__shell--text-only"]}>
+              <div class:list={["post-page__hero", !featuredImage && "post-page__hero--text-only"]}>
+                <div class="post-page__intro">
+                  <p class="post-page__eyebrow">Blossoms Journal</p>
+                  <h1>{title}</h1>
+                  <p class="post-page__lede">{description}</p>
+                  <div class="post-page__meta">
+                    <span>
+                      {new Date(safeEntry.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span>{readingMinutes} min read</span>
+                  </div>
+                </div>
+
+                {featuredImage && (
+                  <figure class="post-page__media">
+                    <img
+                      src={featuredImage}
+                      alt={title}
+                      loading="eager"
+                      decoding="async"
+                    />
+                  </figure>
+                )}
+              </div>
+
+              <div class:list={["post-page__content", !featuredImage && "post-page__content--text-only"]}>
+                {postHeadings.length > 1 && (
+                  <aside class="post-page__rail">
+                    <div class="post-toc">
+                      <p>On this page</p>
+                      <nav aria-label="Table of contents">
+                        <ul>
+                          {postHeadings.map((heading) => (
+                            <li class:list={[heading.level === 3 && "is-sub"]}>
+                              <a href={`#${heading.id}`}>{heading.text}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </nav>
+                    </div>
+                  </aside>
+                )}
+
+                <article class="post-article">
+                  <Fragment set:html={normalizedContent} />
+                </article>
+              </div>
+
+              {relatedPosts.length > 0 && (
+                <section class="related-posts">
+                  <div class="related-posts__heading">
+                    <p>More from the journal</p>
+                    <h2>Keep reading</h2>
+                  </div>
+                  <div class="related-posts__grid">
+                    {relatedPosts.map((post) => (
+                      <article class="related-card">
+                        {post.image && (
+                          <img
+                            src={post.image}
+                            alt={post.title}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                        <div class="related-card__body">
+                          <p class="related-card__meta">
+                            {new Date(post.date).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </p>
+                          <h3>
+                            <a href={post.href}>{post.title}</a>
+                          </h3>
+                          <p>{post.excerpt}</p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          </section>
+        ) : (
+          <>
+            {isAboutPage ? (
+              <section class="about-page">
+                <div class="about-shell">
+                  <section class="about-hero">
+                    <div class="about-hero__copy">
+                      <p class="about-eyebrow">About Blossoms</p>
+                      <p class="about-kicker">Since 1974</p>
+                      <h1>A long-running matchmaking brand that still treats trust as the product.</h1>
+                      <p class="about-lede">{aboutParagraphs[1] || description}</p>
+                      <div class="about-hero__summary">
+                        <p>{aboutParagraphs[2] || "Blossoms spans the pen-pal era, the early web, and modern mobile dating without flattening the experience into disposable swipes."}</p>
+                        <p>{aboutParagraphs[3] || "That history gives the brand a different posture: less hype, more proof, and a stronger expectation of sincerity."}</p>
+                      </div>
+                    </div>
+
+                    <div class="about-hero__media-stack">
+                      {aboutImages[1] && (
+                        <figure class="about-hero__media about-hero__media--portrait">
+                          <img src={aboutImages[1]} alt="Blossoms Dating" loading="eager" decoding="async" />
+                        </figure>
+                      )}
+                      <div class="about-hero__note">
+                        <p class="about-section-kicker">What makes the brand distinct</p>
+                        <p>
+                          Blossoms is not trying to look like a disposable dating app. The differentiator is continuity:
+                          decades of operating history, a clear international niche, and a more deliberate approach to matching.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section class="about-ribbon">
+                    <div class="about-ribbon__intro">
+                      <p class="about-section-kicker">Brand markers</p>
+                      <h2>History, reputation, and cross-border focus are doing most of the work here.</h2>
+                    </div>
+                    <div class="about-stats">
+                      {aboutStats.map((stat) => (
+                        <article class="about-stat">
+                          <p class="about-stat__value">{stat.value}</p>
+                          <h3>{stat.label}</h3>
+                          <p>{stat.detail}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section class="about-history">
+                    <div class="about-history__heading">
+                      <p class="about-section-kicker">Timeline</p>
+                      <h2>{aboutHeadings[1] || "From early international introductions to a modern dating platform."}</h2>
+                    </div>
+                    <div class="about-timeline">
+                      {aboutMilestones.map((milestone) => (
+                        <article class="about-timeline__item">
+                          <p class="about-timeline__year">{milestone.year}</p>
+                          <h3>{milestone.title}</h3>
+                          <p>{milestone.detail}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section class="about-narrative">
+                    <article class="about-narrative__story">
+                      <p class="about-section-kicker">How Blossoms works as a brand</p>
+                      <h2>{aboutHeadings[2] || "A human-centered platform in a category full of noise."}</h2>
+                      {(aboutParagraphs.slice(4, 8).length ? aboutParagraphs.slice(4, 8) : [description]).map((paragraph) => (
+                        <p>{paragraph}</p>
+                      ))}
+                    </article>
+
+                    <aside class="about-principles">
+                      <p class="about-section-kicker">Operating principles</p>
+                      <ul>
+                        {aboutPrinciples.map((item) => (
+                          <li>{item}</li>
+                        ))}
+                      </ul>
+                    </aside>
+                  </section>
+
+                  {aboutImages.length > 2 && (
+                    <section class="about-gallery">
+                      <div class="about-gallery__copy">
+                        <p class="about-section-kicker">Visual language</p>
+                        <h2>{aboutHeadings[3] || "A softer, more relational visual identity than most dating products."}</h2>
+                        <p>
+                          The imagery is less about glossy performance and more about warmth, sincerity, and real-world connection.
+                          That tone helps the brand feel older, steadier, and more credible.
+                        </p>
+                      </div>
+                      <div class="about-gallery__grid">
+                        {aboutImages.slice(1, 4).map((image, index) => (
+                          <figure class:list={["about-gallery__item", index === 0 && "about-gallery__item--large"]}>
+                            <img src={image} alt="Blossoms Dating history" loading="lazy" decoding="async" />
+                          </figure>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {aboutBodyHtml && (
+                    <section class="about-body">
+                      <div class="about-body__inner">
+                        <div class="about-body__heading">
+                          <p class="about-section-kicker">Inside the company</p>
+                          <h2>The original company story, cleaned up for easier reading.</h2>
+                        </div>
+                        <article class="about-richtext">
+                          <Fragment set:html={aboutBodyHtml} />
+                        </article>
+                      </div>
+                    </section>
+                  )}
+
+                  <section class="about-cta">
+                    <div class="about-cta__copy">
+                      <p class="about-section-kicker">Blossoms today</p>
+                      <h2>Still designed for people who want something more intentional than endless casual swiping.</h2>
+                      <p>
+                        The brand advantage is not novelty. It is continuity, trust, and a clearer expectation that the people joining are there for something serious.
+                      </p>
+                    </div>
+                    <div class="faq-cta__actions">
+                      <a href="/frequently-asked-questions/">Browse FAQs</a>
+                      <a
+                        class="faq-cta__secondary"
+                        href="https://members.blossoms.com/register.php"
+                        target="_blank"
+                        rel="noreferrer noopener nofollow"
+                      >
+                        Join Blossoms
+                      </a>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            ) : isFaqPage ? (
+              <section class="faq-page">
+                <div class="faq-shell">
+                  <section
+                    class="faq-hero"
+                    style={faqHeroImage
+                      ? `background-image: linear-gradient(120deg, rgba(31, 18, 22, 0.74), rgba(31, 18, 22, 0.18)), url('${faqHeroImage}')`
+                      : undefined}
+                  >
+                    <div class="faq-hero__copy">
+                      <p class="faq-eyebrow">Reference Guide</p>
+                      <h1>{title}</h1>
+                      <p class="faq-lede">
+                        Need help? This page gathers the most common questions about
+                        Blossoms into a cleaner editorial guide, so people can scan,
+                        orient, and find the answer faster.
+                      </p>
+                    </div>
+
+                    <aside class="faq-hero__aside">
+                      <p class="faq-section-kicker">What this covers</p>
+                      <p>
+                        Membership, profiles, messaging, subscription details,
+                        safety expectations, and technical help.
+                      </p>
+                      <a
+                        href="https://members.blossoms.com/register.php"
+                        target="_blank"
+                        rel="noreferrer noopener nofollow"
+                      >
+                        Join Blossoms
+                      </a>
+                    </aside>
+                  </section>
+
+                  <section class="faq-ribbon">
+                    <article class="faq-stat">
+                      <p class="faq-stat__value">{faqItems.length}</p>
+                      <h2>Questions answered</h2>
+                      <p>A dense archive, reorganized for scanning instead of endless accordion clicks.</p>
+                    </article>
+                    <article class="faq-stat">
+                      <p class="faq-stat__value">{faqGroups.length}</p>
+                      <h2>Editorial sections</h2>
+                      <p>Grouped by the way people actually ask: account, profile, messaging, billing, trust, and tech.</p>
+                    </article>
+                    <article class="faq-stat">
+                      <p class="faq-stat__value">1974</p>
+                      <h2>Brand legacy</h2>
+                      <p>A long-running dating brand, which is why trust, moderation, and process show up throughout the answers.</p>
+                    </article>
+                  </section>
+
+                  <section class="faq-intro">
+                    <div class="faq-intro__heading">
+                      <p class="faq-section-kicker">Editor’s note</p>
+                      <h2>
+                        This page reads better when treated like a reference feature,
+                        not a widget dump.
+                      </h2>
+                    </div>
+                    <div class="faq-intro__body">
+                      {(faqIntroParagraphs.length ? faqIntroParagraphs : [description]).map((paragraph) => (
+                        <p>{paragraph}</p>
+                      ))}
+                    </div>
+                  </section>
+
+                  {faqFeatured.length > 0 && (
+                    <section class="faq-featured">
+                      <div class="faq-featured__heading">
+                        <p class="faq-section-kicker">Most-read answers</p>
+                        <h2>The questions that frame the whole product.</h2>
+                      </div>
+                      <div class="faq-featured__grid">
+                        {faqFeatured.map((item, index) => (
+                          <article class:list={["faq-featured__item", index === 0 && "faq-featured__item--lead"]}>
+                            <p class="faq-featured__index">{String(index + 1).padStart(2, "0")}</p>
+                            <h3>{decodeHtml(item.question)}</h3>
+                            <p>{item.answer}</p>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  <section class="faq-library">
+                    <div class="faq-library__heading">
+                      <p class="faq-section-kicker">Full library</p>
+                      <h2>Every FAQ, reorganized into clearer chapters.</h2>
+                    </div>
+
+                    <div class="faq-library__groups">
+                      {faqGroups.map((group) => (
+                        <section class="faq-group" id={slugify(group.name)}>
+                          <div class="faq-group__intro">
+                            <p class="faq-group__count">{String(group.items.length).padStart(2, "0")}</p>
+                            <h3>{group.name}</h3>
+                          </div>
+
+                          <div class="faq-group__items">
+                            {group.items.map((item, index) => (
+                              <details class="faq-item" open={index === 0}>
+                                <summary>{decodeHtml(item.question)}</summary>
+                                <div class="faq-item__answer">
+                                  <p>{item.answer}</p>
+                                </div>
+                              </details>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section class="faq-cta">
+                    <div class="faq-cta__copy">
+                      <p class="faq-section-kicker">Still need help?</p>
+                      <h2>
+                        If the answer is not here, the next step should be support,
+                        not guesswork.
+                      </h2>
+                      <p>
+                        Use the account tools, safety resources, and support
+                        guidance before sharing more personal information than
+                        you should. If you are still evaluating the platform,
+                        read the safety guide and the brand story next.
+                      </p>
+                    </div>
+                    <div class="faq-cta__actions">
+                      <a href="/dating-safety/">Read safety tips</a>
+                      <a
+                        class="faq-cta__secondary"
+                        href="/about-us/"
+                      >
+                        About Blossoms
+                      </a>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            ) : isDatingSafetyPage ? (
+              <section class="safety-page">
+                <div class="safety-shell">
+                  <section
+                    class="safety-hero"
+                    style={safetyHeroImage
+                      ? `background-image: linear-gradient(120deg, rgba(24, 28, 25, 0.72), rgba(24, 28, 25, 0.2)), url('${safetyHeroImage}')`
+                      : undefined}
+                  >
+                    <div class="safety-hero__copy">
+                      <p class="safety-eyebrow">Safety Guide</p>
+                      <h1>{title}</h1>
+                      <p class="safety-lede">
+                        While meeting someone new can be exciting, the rules should stay
+                        simple: move slowly, protect your information, and treat safety
+                        as part of the relationship process, not an interruption to it.
+                      </p>
+                    </div>
+
+                    <aside class="safety-hero__aside">
+                      <p class="safety-section-kicker">Core rule</p>
+                      <p>
+                        Trust should build through consistency, not urgency. If someone
+                        pushes for money, secrecy, or fast emotional escalation, step back.
+                      </p>
+                      <a href="/frequently-asked-questions/">Read FAQs</a>
+                    </aside>
+                  </section>
+
+                  <section class="safety-ribbon">
+                    <article class="safety-stat">
+                      <p class="safety-stat__value">4</p>
+                      <h2>Non-negotiables</h2>
+                      <p>The page is really about four baseline rules that reduce most avoidable risk.</p>
+                    </article>
+                    <article class="safety-stat">
+                      <p class="safety-stat__value">{safetyRiskSignals.length || 6}</p>
+                      <h2>Common warning signs</h2>
+                      <p>Scams, impersonation, coercion, and abusive behavior all follow familiar patterns.</p>
+                    </article>
+                    <article class="safety-stat">
+                      <p class="safety-stat__value">{safetyResourceCards.length || 7}</p>
+                      <h2>Support routes</h2>
+                      <p>Platform support, law enforcement, and crisis resources should be easy to reach when needed.</p>
+                    </article>
+                  </section>
+
+                  <section class="safety-intro">
+                    <div class="safety-intro__heading">
+                      <p class="safety-section-kicker">Editorial note</p>
+                      <h2>
+                        A safer dating experience is usually the result of structure, not instinct.
+                      </h2>
+                    </div>
+                    <div class="safety-intro__body">
+                      {(safetyParagraphs.slice(0, 2).length ? safetyParagraphs.slice(0, 2) : [description]).map((paragraph) => (
+                        <p>{paragraph}</p>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section class="safety-principles">
+                    <div class="safety-principles__heading">
+                      <p class="safety-section-kicker">The essentials</p>
+                      <h2>The four habits that should shape every early interaction.</h2>
+                    </div>
+                    <div class="safety-principles__grid">
+                      {safetyPrinciples.map((item, index) => (
+                        <article class:list={["safety-principle", index === 0 && "safety-principle--lead"]}>
+                          <p class="safety-principle__index">{String(index + 1).padStart(2, "0")}</p>
+                          <h3>{item.title}</h3>
+                          <p>{item.body}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+
+                  {safetyRiskSignals.length > 0 && (
+                    <section class="safety-signals">
+                      <div class="safety-signals__heading">
+                        <p class="safety-section-kicker">Watch for this</p>
+                        <h2>Patterns that should trigger distance, reporting, or immediate exit.</h2>
+                      </div>
+                      <div class="safety-signals__grid">
+                        {safetyRiskSignals.map((item) => (
+                          <article class="safety-signal">
+                            <h3>{item.label}</h3>
+                            <p>{item.detail}</p>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {safetyResourceCards.length > 0 && (
+                    <section class="safety-resources">
+                      <div class="safety-resources__heading">
+                        <p class="safety-section-kicker">Support & reporting</p>
+                        <h2>Resources worth knowing before you need them.</h2>
+                      </div>
+                      <div class="safety-resources__grid">
+                        {safetyResourceCards.map((item) => (
+                          <article class="safety-resource">
+                            <h3>{item.label}</h3>
+                            <p>{item.detail}</p>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {safetyBodyHtml && (
+                    <section class="safety-body">
+                      <div class="safety-body__inner">
+                        <div class="safety-body__heading">
+                          <p class="safety-section-kicker">Full guidance</p>
+                          <h2>The original safety content, cleaned up into a readable longform section.</h2>
+                        </div>
+                        <article class="safety-richtext">
+                          <Fragment set:html={safetyBodyHtml} />
+                        </article>
+                      </div>
+                    </section>
+                  )}
+
+                  <section class="safety-cta">
+                    <div class="safety-cta__copy">
+                      <p class="safety-section-kicker">Use the platform well</p>
+                      <h2>Good dating judgment is part emotional, part procedural.</h2>
+                      <p>
+                        Keep conversations on-platform until trust is earned, report anything suspicious early,
+                        and treat privacy as something to protect instead of something to trade away. If you need
+                        operational help, use the FAQ. If you want broader context, continue into the journal.
+                      </p>
+                    </div>
+                    <div class="safety-cta__actions">
+                      <a href="/frequently-asked-questions/">
+                        Browse FAQ
+                      </a>
+                      <a class="safety-cta__secondary" href="/blog/">
+                        Read dating advice
+                      </a>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            ) : isLocationDatingPage ? (
+              <section class="location-page">
+                <div class="location-shell">
+                  <section
+                    class="location-hero"
+                    style={locationHeroImage
+                      ? `background-image: linear-gradient(115deg, rgba(28, 15, 18, 0.72), rgba(28, 15, 18, 0.22)), url('${locationHeroImage}')`
+                      : undefined}
+                  >
+                    <div class="location-hero__copy">
+                      <p class="location-eyebrow">Filipina Dating Guide</p>
+                      <h1>{title}</h1>
+                      <p class="location-lede">
+                        {locationParagraphs[0] || description}
+                      </p>
+                      <div class="location-actions">
+                        <a href="https://members.blossoms.com/register.php" target="_blank" rel="noreferrer noopener nofollow">
+                          Join Blossoms
+                        </a>
+                        <a class="location-actions__secondary" href="/dating-safety/">
+                          Read safety guide
+                        </a>
+                      </div>
+                    </div>
+                  </section>
+
+                  {locationStatCards.length > 0 && (
+                    <section class="location-stats">
+                      {locationStatCards.map((stat) => (
+                        <article class="location-stat">
+                          <p class="location-stat__value">{stat.value}</p>
+                          <h2>{stat.label}</h2>
+                          <p>{stat.detail}</p>
+                        </article>
+                      ))}
+                    </section>
+                  )}
+
+                  <section class="location-overview">
+                    <article class="location-story">
+                      <p class="location-section-kicker">Why {locationName} stands out</p>
+                      <h2>Meet Filipina singles in {locationName} through a brand built around trust and long-term intent.</h2>
+                      {(locationParagraphs.slice(1, 4).length
+                        ? locationParagraphs.slice(1, 4)
+                        : [description]
+                      ).map((paragraph) => (
+                        <p>{paragraph}</p>
+                      ))}
+                    </article>
+
+                    <aside class="location-highlights">
+                      <p class="location-section-kicker">What people value here</p>
+                      <ul>
+                        {(locationListItems.length
+                          ? locationListItems
+                          : [
+                              `Verified profiles for people exploring dating in ${locationName}.`,
+                              "A clearer starting point for long-term relationships, not casual noise.",
+                              "Messaging, matching, and profile browsing designed around trust.",
+                              "A platform with international dating experience since 1974.",
+                            ]
+                        ).map((item) => (
+                          <li>{item}</li>
+                        ))}
+                      </ul>
+                    </aside>
+                  </section>
+
+                  {locationBodyHtml && (
+                    <section class="location-body">
+                      <div class="location-body__inner">
+                        <p class="location-section-kicker">More about dating in {locationName}</p>
+                        <article class="location-richtext">
+                          <Fragment set:html={locationBodyHtml} />
+                        </article>
+                      </div>
+                    </section>
+                  )}
+
+                  <section class="location-cta">
+                    <div>
+                      <p class="location-section-kicker">Ready to start</p>
+                      <h2>Find real connections in {locationName} without the clutter.</h2>
+                    </div>
+                    <div class="safety-cta__actions">
+                      <a href="/blog/">Read dating advice</a>
+                      <a class="safety-cta__secondary" href="https://members.blossoms.com/register.php" target="_blank" rel="noreferrer noopener nofollow">
+                        Register now
+                      </a>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            ) : (
+              <article
+                class:list={[
+                  "entry-content",
+                  safeEntry.route === "/" && "home-entry",
+                ]}
+              >
+                <Fragment set:html={normalizedContent} />
+              </article>
+            )}
+          </>
+        )}
+      </>
+    )
+  }
+</SiteLayout>
+
+<style>
+  .post-page {
+    padding: 3.5rem 0 5rem;
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(244, 67, 54, 0.12),
+        transparent 24rem
+      ),
+      linear-gradient(180deg, #fff8f4 0%, #fffdfc 100%);
+  }
+
+  .post-page__shell {
+    width: min(1320px, calc(100% - 2rem));
+    margin: 0 auto;
+  }
+
+  .post-page__shell--text-only {
+    width: min(1480px, calc(100% - 2rem));
+  }
+
+  .post-page__hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
+    gap: clamp(1.75rem, 4vw, 4rem);
+    align-items: end;
+    margin-bottom: 2.75rem;
+  }
+
+  .post-page__hero--text-only {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 72rem;
+  }
+
+  .post-page__intro {
+    display: grid;
+    gap: 1rem;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .post-page__eyebrow,
+  .related-posts__heading p {
+    margin: 0;
+    color: #a42a34;
+    font:
+      700 0.78rem/1.2 Poppins,
+      sans-serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .post-page h1 {
+    margin: 0;
+    color: #23151a;
+    font-size: clamp(2.8rem, 5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+  }
+
+  .post-page__lede {
+    margin: 0;
+    max-width: 42rem;
+    color: #6c5860;
+    font-size: 1.08rem;
+    line-height: 1.8;
+  }
+
+  .post-page__hero--text-only .post-page__lede {
+    max-width: 56rem;
+  }
+
+  .post-page__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    justify-content: center;
+    color: #7f6169;
+    font:
+      600 0.85rem/1.2 Poppins,
+      sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .post-page__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .post-page__meta span + span::before {
+    content: "";
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 999px;
+    background: rgba(164, 42, 52, 0.45);
+    margin-right: 0.4rem;
+  }
+
+  .post-page__media {
+    margin: 0;
+    overflow: clip;
+    border-radius: 2rem;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    box-shadow: 0 1.6rem 4rem rgba(121, 57, 67, 0.14);
+    background: #fff;
+  }
+
+  .post-page__media img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .post-page__content {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: start;
+  }
+
+  .post-page__content--text-only {
+    grid-template-columns: minmax(0, 12rem) minmax(0, 52rem);
+  }
+
+  .post-page__rail {
+    position: sticky;
+    top: 6.5rem;
+  }
+
+  .post-toc {
+    padding: 1.2rem 1.1rem;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.4rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1rem 2.2rem rgba(121, 57, 67, 0.08);
+  }
+
+  .post-toc p {
+    margin: 0 0 0.9rem;
+    color: #2a1b20;
+    font:
+      700 0.86rem/1.2 Poppins,
+      sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .post-toc ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .post-toc li.is-sub {
+    padding-left: 0.9rem;
+  }
+
+  .post-toc a {
+    color: #6c5860;
+    text-decoration: none;
+    line-height: 1.45;
+  }
+
+  .post-toc a:hover {
+    color: #a42a34;
+  }
+
+  .post-article {
+    min-width: 0;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border: 1px solid rgba(125, 58, 66, 0.1);
+    border-radius: 1.8rem;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 1.2rem 3rem rgba(121, 57, 67, 0.09);
+  }
+
+  .post-article :global(h2),
+  .post-article :global(h3),
+  .post-article :global(h4) {
+    color: #23151a;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    scroll-margin-top: 7rem;
+  }
+
+  .post-article :global(h2) {
+    margin-top: 2.6rem;
+    font-size: clamp(2rem, 3vw, 2.8rem);
+  }
+
+  .post-article :global(h3) {
+    margin-top: 2rem;
+    font-size: clamp(1.45rem, 2vw, 1.9rem);
+  }
+
+  .post-article :global(p),
+  .post-article :global(li) {
+    color: #433239;
+    font-size: 1.05rem;
+    line-height: 1.9;
+  }
+
+  .post-article :global(figure) {
+    margin: 2rem 0;
+  }
+
+  .post-article :global(img) {
+    border-radius: 1.3rem;
+  }
+
+  .post-article :global(ul),
+  .post-article :global(ol) {
+    padding-left: 1.4rem;
+  }
+
+  .post-article :global(blockquote) {
+    margin: 2rem 0;
+    padding: 1.2rem 1.3rem;
+    border-left: 4px solid #f44336;
+    border-radius: 0 1rem 1rem 0;
+    background: rgba(244, 67, 54, 0.06);
+  }
+
+  .related-posts {
+    margin-top: 3rem;
+  }
+
+  .related-posts__heading {
+    margin-bottom: 1.1rem;
+  }
+
+  .related-posts__heading h2 {
+    margin: 0.25rem 0 0;
+    color: #23151a;
+    font-size: clamp(1.9rem, 3vw, 2.8rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .related-posts__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.2rem;
+  }
+
+  .related-card {
+    overflow: clip;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1.1rem 2.6rem rgba(121, 57, 67, 0.08);
+  }
+
+  .related-card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .related-card__body {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .related-card__meta {
+    margin: 0;
+    color: #8d6f78;
+    font:
+      600 0.76rem/1.2 Poppins,
+      sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .related-card h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    line-height: 1.15;
+  }
+
+  .related-card h3 a {
+    color: #24161c;
+    text-decoration: none;
+  }
+
+  .related-card h3 a:hover {
+    color: #a42a34;
+  }
+
+  .related-card__body > p:last-child {
+    margin: 0;
+    color: #67545b;
+    line-height: 1.7;
+  }
+
+  .blog-index {
+    padding: 4.5rem 0 5.5rem;
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(233, 118, 93, 0.12),
+        transparent 28rem
+      ),
+      linear-gradient(180deg, #fff9f6 0%, #fffdfc 100%);
+  }
+
+  .blog-index__shell {
+    width: min(1220px, calc(100% - 2rem));
+    margin: 0 auto;
+  }
+
+  .blog-index__hero {
+    margin-bottom: 2.5rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .blog-index__eyebrow {
+    margin: 0 0 0.75rem;
+    color: #a42a34;
+    font:
+      700 0.8rem/1.2 Poppins,
+      sans-serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .blog-index h1 {
+    margin: 0;
+    color: #24161c;
+    font-size: clamp(2.7rem, 5vw, 4.8rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+  }
+
+  .blog-index__lede {
+    margin: 1.1rem 0 0;
+    max-width: 40rem;
+    color: #67545b;
+    font-size: 1.08rem;
+    line-height: 1.75;
+  }
+
+  .blog-index__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.4rem;
+  }
+
+  .blog-card {
+    overflow: clip;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.6rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1.4rem 3rem rgba(121, 57, 67, 0.08);
+  }
+
+  .blog-card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .blog-card__body {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1.15rem 1.15rem 1.25rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .blog-card__meta {
+    margin: 0;
+    color: #8d6f78;
+    font:
+      600 0.78rem/1.2 Poppins,
+      sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .blog-card h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+
+  .blog-card h2 a {
+    color: #24161c;
+    text-decoration: none;
+  }
+
+  .blog-card h2 a:hover {
+    color: #a42a34;
+  }
+
+  .blog-card__body > p:last-of-type {
+    margin: 0;
+    color: #67545b;
+    line-height: 1.72;
+  }
+
+  .blog-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #a42a34;
+    font:
+      700 0.92rem/1.2 Poppins,
+      sans-serif;
+    text-decoration: none;
+  }
+
+  .blog-card__link::after {
+    content: "→";
+  }
+
+  .location-page {
+    padding: 2.5rem 0 5rem;
+    background:
+      radial-gradient(circle at top left, rgba(244, 67, 54, 0.12), transparent 26rem),
+      linear-gradient(180deg, #fff8f4 0%, #fffdfc 100%);
+  }
+
+  .location-shell {
+    width: min(1320px, calc(100% - 2rem));
+    margin: 0 auto;
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .location-hero {
+    position: relative;
+    overflow: clip;
+    min-height: 32rem;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 2rem;
+    background:
+      linear-gradient(115deg, rgba(28, 15, 18, 0.72), rgba(28, 15, 18, 0.22)),
+      linear-gradient(135deg, #efe3df 0%, #fdf9f7 100%);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 1.6rem 4rem rgba(121, 57, 67, 0.14);
+    display: flex;
+    align-items: end;
+  }
+
+  .location-hero__copy {
+    width: min(42rem, 100%);
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 1.75rem;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(18px);
+    color: #fff7f4;
+  }
+
+  .location-eyebrow,
+  .location-section-kicker {
+    margin: 0;
+    color: #c52d39;
+    font: 700 0.78rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .location-hero .location-eyebrow {
+    color: #ffd5cf;
+  }
+
+  .location-hero h1,
+  .location-overview h2,
+  .location-body h2,
+  .location-cta h2 {
+    margin: 0;
+    color: #24161c;
+    font-size: clamp(2.2rem, 4.8vw, 4.8rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+  }
+
+  .location-hero h1 {
+    color: #fff7f4;
+  }
+
+  .location-lede,
+  .location-story p,
+  .location-highlights li,
+  .location-richtext :global(p),
+  .location-richtext :global(li),
+  .location-stat p {
+    margin: 0;
+    color: #6b5860;
+    font-size: 1.04rem;
+    line-height: 1.85;
+  }
+
+  .location-hero .location-lede {
+    color: rgba(255, 247, 244, 0.9);
+  }
+
+  .location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+  }
+
+  .location-actions a,
+  .location-cta a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.95rem 1.2rem;
+    border-radius: 999px;
+    text-decoration: none;
+    font: 700 0.95rem/1 Poppins, sans-serif;
+  }
+
+  .location-actions a,
+  .location-cta a {
+    background: linear-gradient(135deg, #c72d39 0%, #e34c55 100%);
+    color: #fff;
+  }
+
+  .location-actions__secondary {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    color: #fff7f4 !important;
+  }
+
+  .location-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .location-stat,
+  .location-story,
+  .location-highlights,
+  .location-body__inner,
+  .location-cta {
+    padding: 1.4rem;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.6rem;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 1.1rem 2.6rem rgba(121, 57, 67, 0.08);
+  }
+
+  .location-stat {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .location-stat__value {
+    color: #c72d39 !important;
+    font: 700 clamp(1.8rem, 3vw, 2.6rem)/1 Raleway, serif !important;
+    letter-spacing: -0.04em;
+  }
+
+  .location-stat h2 {
+    font-size: 1.35rem;
+    line-height: 1.05;
+  }
+
+  .location-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+    gap: 1rem;
+  }
+
+  .location-story,
+  .location-highlights,
+  .location-body__inner {
+    display: grid;
+    gap: 0.95rem;
+  }
+
+  .location-story h2,
+  .location-cta h2 {
+    font-size: clamp(1.9rem, 3vw, 3rem);
+  }
+
+  .location-highlights ul {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .location-body__inner {
+    max-width: 70rem;
+  }
+
+  .location-richtext :global(h2),
+  .location-richtext :global(h3) {
+    margin: 1.8rem 0 0;
+    color: #24161c;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .location-richtext :global(h2) {
+    font-size: clamp(1.7rem, 2.8vw, 2.5rem);
+  }
+
+  .location-richtext :global(h3) {
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+  }
+
+  .location-richtext :global(ul),
+  .location-richtext :global(ol) {
+    padding-left: 1.35rem;
+    margin: 0;
+  }
+
+  .location-richtext :global(a) {
+    color: #a42a34;
+  }
+
+  .location-cta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .about-page {
+    padding: 3.5rem 0 6rem;
+    background:
+      radial-gradient(circle at top left, rgba(189, 49, 60, 0.08), transparent 28rem),
+      radial-gradient(circle at 85% 12%, rgba(121, 57, 67, 0.05), transparent 22rem),
+      linear-gradient(180deg, #fffaf6 0%, #fffdfb 48%, #fff9f5 100%);
+  }
+
+  .about-shell {
+    width: min(1380px, calc(100% - 2rem));
+    margin: 0 auto;
+    display: grid;
+    gap: 2rem;
+  }
+
+  .about-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.28fr) minmax(24rem, 0.72fr);
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+
+  .about-hero__copy,
+  .about-stat,
+  .about-ribbon,
+  .about-history,
+  .about-narrative__story,
+  .about-principles,
+  .about-body__inner,
+  .about-cta {
+    padding: 1.85rem;
+    border: 1px solid rgba(88, 50, 58, 0.1);
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0.7rem 1.8rem rgba(91, 46, 56, 0.05);
+  }
+
+  .about-hero__copy {
+    display: grid;
+    align-content: space-between;
+    gap: 1.25rem;
+    min-height: 39rem;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,243,0.92));
+  }
+
+  .about-eyebrow,
+  .about-section-kicker {
+    margin: 0;
+    color: #8d3944;
+    font: 700 0.74rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .about-kicker {
+    margin: 0;
+    color: rgba(36, 22, 28, 0.58);
+    font: 600 0.9rem/1.2 Georgia, serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .about-hero h1,
+  .about-ribbon h2,
+  .about-history h2,
+  .about-narrative h2,
+  .about-body h2,
+  .about-cta h2 {
+    margin: 0;
+    color: #24161c;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.9rem, 5.2vw, 5.8rem);
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+  }
+
+  .about-hero h1 {
+    max-width: 10.5ch;
+  }
+
+  .about-ribbon h2,
+  .about-history h2,
+  .about-narrative h2,
+  .about-cta h2 {
+    font-size: clamp(2rem, 3vw, 3.2rem);
+    line-height: 0.96;
+  }
+
+  .about-lede,
+  .about-hero__summary p,
+  .about-hero__note p,
+  .about-history p,
+  .about-narrative p,
+  .about-principles li,
+  .about-richtext :global(p),
+  .about-richtext :global(li),
+  .about-stat p,
+  .about-cta p {
+    margin: 0;
+    color: #66545b;
+    font-size: 1.04rem;
+    line-height: 1.86;
+  }
+
+  .about-hero__media,
+  .about-hero__note,
+  .about-gallery__item {
+    margin: 0;
+    overflow: clip;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(88, 50, 58, 0.1);
+    box-shadow: 0 0.75rem 2rem rgba(91, 46, 56, 0.06);
+    background: rgba(255,255,255,0.96);
+  }
+
+  .about-hero__media img,
+  .about-gallery__item img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .about-hero__summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid rgba(88, 50, 58, 0.12);
+  }
+
+  .about-hero__media-stack {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 1rem;
+  }
+
+  .about-hero__media--portrait {
+    min-height: 39rem;
+  }
+
+  .about-hero__note {
+    padding: 1.35rem 1.35rem 1.45rem;
+    display: grid;
+    gap: 0.7rem;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,244,0.92));
+    margin-left: -3.5rem;
+    margin-top: -4rem;
+    position: relative;
+  }
+
+  .about-ribbon {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 1.5rem;
+    align-items: start;
+    padding: 0 0 1.75rem;
+    border: 0;
+    border-top: 1px solid rgba(88, 50, 58, 0.12);
+    border-bottom: 1px solid rgba(88, 50, 58, 0.12);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .about-ribbon__intro {
+    display: grid;
+    gap: 0.8rem;
+    align-content: start;
+    padding-top: 1.1rem;
+  }
+
+  .about-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .about-stat {
+    display: grid;
+    gap: 0.55rem;
+    padding: 1.1rem 1.2rem 0 1.2rem;
+    border: 0;
+    border-left: 1px solid rgba(88, 50, 58, 0.12);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .about-stat:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .about-stat__value {
+    color: #c72d39 !important;
+    font: 700 clamp(1.9rem, 3vw, 2.85rem)/0.92 Georgia, serif !important;
+    letter-spacing: -0.04em;
+  }
+
+  .about-stat h3 {
+    margin: 0;
+    color: #24161c;
+    font-family: Georgia, serif;
+    font-size: 1.45rem;
+    line-height: 1.02;
+  }
+
+  .about-history {
+    display: grid;
+    gap: 1.4rem;
+  }
+
+  .about-history__heading {
+    display: grid;
+    gap: 0.7rem;
+    max-width: 56rem;
+  }
+
+  .about-timeline {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .about-timeline__item {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.2rem 0 0;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    border-top: 1px solid rgba(88, 50, 58, 0.14);
+  }
+
+  .about-timeline__year {
+    margin: 0;
+    color: #c72d39;
+    font: 700 0.76rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .about-timeline__item h3 {
+    margin: 0;
+    color: #24161c;
+    font-family: Georgia, serif;
+    font-size: 1.52rem;
+    line-height: 1.02;
+  }
+
+  .about-narrative {
+    display: grid;
+    grid-template-columns: minmax(0, 1.14fr) minmax(22rem, 0.86fr);
+    gap: 1.25rem;
+  }
+
+  .about-narrative__story,
+  .about-principles,
+  .about-body__inner {
+    display: grid;
+    gap: 0.95rem;
+  }
+
+  .about-principles ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .about-principles li {
+    padding: 1rem 0 1rem 1.2rem;
+    position: relative;
+    border-top: 1px solid rgba(88, 50, 58, 0.12);
+  }
+
+  .about-principles li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 1.45rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #c72d39, #f37b6f);
+  }
+
+  .about-gallery {
+    display: grid;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: 1.5rem;
+  }
+
+  .about-gallery__copy {
+    display: grid;
+    gap: 0.95rem;
+    align-content: start;
+    padding: 1.6rem 1rem 0 0;
+  }
+
+  .about-gallery__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 1rem;
+  }
+
+  .about-gallery__item--large {
+    min-height: 29rem;
+    grid-row: span 2;
+  }
+
+  .about-gallery__item:not(.about-gallery__item--large) {
+    min-height: 14rem;
+  }
+
+  .about-body__inner {
+    max-width: 76rem;
+  }
+
+  .about-body__heading {
+    display: grid;
+    gap: 0.6rem;
+    max-width: 50rem;
+  }
+
+  .about-richtext :global(h2),
+  .about-richtext :global(h3) {
+    margin: 1.8rem 0 0;
+    color: #24161c;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .about-richtext :global(h2) {
+    font-family: Georgia, serif;
+    font-size: clamp(1.8rem, 2.8vw, 2.55rem);
+  }
+
+  .about-richtext :global(h3) {
+    font-family: Georgia, serif;
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+  }
+
+  .about-richtext :global(ul),
+  .about-richtext :global(ol) {
+    margin: 0;
+    padding-left: 1.35rem;
+  }
+
+  .about-richtext :global(a) {
+    color: #a42a34;
+  }
+
+  .about-cta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    background:
+      radial-gradient(circle at right center, rgba(244, 67, 54, 0.08), transparent 18rem),
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,249,245,0.94));
+  }
+
+  .about-cta__copy {
+    display: grid;
+    gap: 0.7rem;
+    max-width: 52rem;
+  }
+
+  .about-cta a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.25rem;
+    padding: 1rem 1.35rem;
+    border-radius: 999px;
+    text-decoration: none;
+    background: linear-gradient(135deg, #9d2531 0%, #c83e49 100%);
+    color: #fff;
+    font: 700 0.95rem/1 Poppins, sans-serif;
+  }
+
+  .faq-page {
+    padding: 3.5rem 0 5.5rem;
+    background:
+      radial-gradient(circle at top left, rgba(157, 37, 49, 0.08), transparent 24rem),
+      radial-gradient(circle at 88% 12%, rgba(91, 46, 56, 0.06), transparent 20rem),
+      linear-gradient(180deg, #fffaf6 0%, #fffdfb 52%, #fff7f2 100%);
+  }
+
+  .faq-shell {
+    width: min(1380px, calc(100% - 2rem));
+    margin: 0 auto;
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .faq-hero,
+  .faq-stat,
+  .faq-intro,
+  .faq-featured,
+  .faq-group,
+  .faq-cta {
+    border: 1px solid rgba(88, 50, 58, 0.1);
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0.7rem 1.8rem rgba(91, 46, 56, 0.05);
+  }
+
+  .faq-eyebrow,
+  .faq-section-kicker {
+    margin: 0;
+    color: #8d3944;
+    font: 700 0.74rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .faq-hero {
+    min-height: 34rem;
+    padding: 1.75rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.8fr);
+    gap: 1rem;
+    align-items: end;
+    background-size: cover;
+    background-position: center;
+    overflow: clip;
+  }
+
+  .faq-hero__copy,
+  .faq-hero__aside {
+    backdrop-filter: blur(18px);
+  }
+
+  .faq-hero__copy {
+    max-width: 44rem;
+    display: grid;
+    gap: 1rem;
+    padding: 1.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    background: rgba(255, 248, 244, 0.12);
+    color: #fff8f4;
+  }
+
+  .faq-hero h1,
+  .faq-intro h2,
+  .faq-featured h2,
+  .faq-library h2,
+  .faq-cta h2 {
+    margin: 0;
+    color: #24161c;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 0.92;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+  }
+
+  .faq-hero h1 {
+    color: #fff8f4;
+    font-size: clamp(3rem, 5vw, 5.4rem);
+    max-width: 9ch;
+  }
+
+  .faq-lede,
+  .faq-hero__aside p,
+  .faq-stat p,
+  .faq-intro__body p,
+  .faq-featured__item p,
+  .faq-item__answer p,
+  .faq-cta p {
+    margin: 0;
+    color: #66545b;
+    font-size: 1.02rem;
+    line-height: 1.84;
+  }
+
+  .faq-hero__copy .faq-lede,
+  .faq-hero__copy .faq-eyebrow,
+  .faq-hero__aside p,
+  .faq-hero__aside .faq-section-kicker {
+    color: #fff8f4;
+  }
+
+  .faq-hero__aside {
+    justify-self: end;
+    width: min(100%, 22rem);
+    display: grid;
+    gap: 0.9rem;
+    align-content: end;
+    padding: 1.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    background: rgba(28, 16, 20, 0.28);
+  }
+
+  .faq-hero__aside a,
+  .faq-cta__actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.95rem 1.2rem;
+    border-radius: 999px;
+    text-decoration: none;
+    background: linear-gradient(135deg, #9d2531 0%, #c83e49 100%);
+    color: #fff;
+    font: 700 0.94rem/1 Poppins, sans-serif;
+  }
+
+  .faq-ribbon {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    border-top: 1px solid rgba(88, 50, 58, 0.12);
+    border-bottom: 1px solid rgba(88, 50, 58, 0.12);
+  }
+
+  .faq-stat {
+    padding: 1.2rem 1.25rem 1.3rem;
+    border: 0;
+    border-left: 1px solid rgba(88, 50, 58, 0.12);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .faq-stat:first-child {
+    border-left: 0;
+  }
+
+  .faq-stat__value,
+  .faq-group__count,
+  .faq-featured__index {
+    margin: 0;
+    color: #c72d39;
+    font: 700 clamp(1.8rem, 3vw, 2.75rem)/0.92 Georgia, serif;
+    letter-spacing: -0.04em;
+  }
+
+  .faq-stat h2,
+  .faq-featured h3,
+  .faq-group h3 {
+    margin: 0;
+    color: #24161c;
+    font-family: Georgia, serif;
+    line-height: 1.02;
+  }
+
+  .faq-stat h2 {
+    font-size: 1.4rem;
+  }
+
+  .faq-intro,
+  .faq-featured,
+  .faq-cta {
+    padding: 1.75rem;
+  }
+
+  .faq-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .faq-intro h2,
+  .faq-featured h2,
+  .faq-library h2,
+  .faq-cta h2 {
+    font-size: clamp(2rem, 3vw, 3.2rem);
+  }
+
+  .faq-intro__heading,
+  .faq-intro__body,
+  .faq-featured__heading,
+  .faq-library__heading,
+  .faq-cta__copy {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .faq-featured__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.35rem;
+  }
+
+  .faq-featured__item {
+    display: grid;
+    gap: 0.8rem;
+    padding: 1.25rem 0 0;
+    border-top: 1px solid rgba(88, 50, 58, 0.14);
+  }
+
+  .faq-featured__item--lead {
+    grid-column: span 2;
+    padding-right: 1.5rem;
+  }
+
+  .faq-featured h3 {
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+  }
+
+  .faq-library {
+    display: grid;
+    gap: 1.15rem;
+  }
+
+  .faq-library__groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .faq-group {
+    padding: 1.35rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .faq-group__intro {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.9rem;
+    align-items: end;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid rgba(88, 50, 58, 0.12);
+  }
+
+  .faq-group__items {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .faq-item {
+    padding: 0.15rem 0 0;
+    border-top: 1px solid rgba(88, 50, 58, 0.1);
+  }
+
+  .faq-item:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .faq-item summary {
+    list-style: none;
+    cursor: pointer;
+    color: #24161c;
+    font: 600 1rem/1.5 Poppins, sans-serif;
+    padding: 0.85rem 2.25rem 0.85rem 0;
+    position: relative;
+  }
+
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item summary::after {
+    content: "+";
+    position: absolute;
+    right: 0;
+    top: 0.65rem;
+    color: #a42a34;
+    font: 400 1.7rem/1 Georgia, serif;
+  }
+
+  .faq-item[open] summary::after {
+    content: "−";
+  }
+
+  .faq-item__answer {
+    padding: 0 1rem 0.9rem 0;
+  }
+
+  .faq-cta {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    background:
+      radial-gradient(circle at right center, rgba(244, 67, 54, 0.08), transparent 18rem),
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,249,245,0.94));
+  }
+
+  .faq-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .faq-cta__secondary {
+    background: transparent !important;
+    border: 1px solid rgba(157, 37, 49, 0.18);
+    color: #9d2531 !important;
+  }
+
+  .safety-page {
+    padding: 3.5rem 0 5.5rem;
+    background:
+      radial-gradient(circle at top left, rgba(91, 120, 97, 0.08), transparent 24rem),
+      radial-gradient(circle at 88% 12%, rgba(38, 63, 54, 0.06), transparent 20rem),
+      linear-gradient(180deg, #fafaf6 0%, #fdfdfb 48%, #f6f6f0 100%);
+  }
+
+  .safety-shell {
+    width: min(1380px, calc(100% - 2rem));
+    margin: 0 auto;
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .safety-hero,
+  .safety-stat,
+  .safety-intro,
+  .safety-principles,
+  .safety-signals,
+  .safety-resources,
+  .safety-body__inner,
+  .safety-cta {
+    border: 1px solid rgba(51, 66, 57, 0.12);
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0.7rem 1.8rem rgba(48, 61, 51, 0.05);
+  }
+
+  .safety-eyebrow,
+  .safety-section-kicker {
+    margin: 0;
+    color: #50695a;
+    font: 700 0.74rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .safety-hero {
+    min-height: 34rem;
+    padding: 1.75rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+    gap: 1rem;
+    align-items: end;
+    background-size: cover;
+    background-position: center;
+    overflow: clip;
+  }
+
+  .safety-hero__copy,
+  .safety-hero__aside {
+    backdrop-filter: blur(18px);
+  }
+
+  .safety-hero__copy {
+    max-width: 46rem;
+    display: grid;
+    gap: 1rem;
+    padding: 1.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 1rem;
+    background: rgba(248, 251, 247, 0.12);
+    color: #f8fbf7;
+  }
+
+  .safety-hero h1,
+  .safety-intro h2,
+  .safety-principles h2,
+  .safety-signals h2,
+  .safety-resources h2,
+  .safety-body h2,
+  .safety-cta h2 {
+    margin: 0;
+    color: #1d241f;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 0.92;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+  }
+
+  .safety-hero h1 {
+    color: #f8fbf7;
+    font-size: clamp(3rem, 5vw, 5.2rem);
+    max-width: 8ch;
+  }
+
+  .safety-lede,
+  .safety-hero__aside p,
+  .safety-stat p,
+  .safety-intro__body p,
+  .safety-principle p,
+  .safety-signal p,
+  .safety-resource p,
+  .safety-richtext :global(p),
+  .safety-richtext :global(li),
+  .safety-cta p {
+    margin: 0;
+    color: #58635b;
+    font-size: 1.02rem;
+    line-height: 1.84;
+  }
+
+  .safety-hero__copy .safety-lede,
+  .safety-hero__copy .safety-eyebrow,
+  .safety-hero__aside p,
+  .safety-hero__aside .safety-section-kicker {
+    color: #f8fbf7;
+  }
+
+  .safety-hero__aside {
+    justify-self: end;
+    width: min(100%, 22rem);
+    display: grid;
+    gap: 0.9rem;
+    align-content: end;
+    padding: 1.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 1rem;
+    background: rgba(24, 33, 27, 0.3);
+  }
+
+  .safety-hero__aside a,
+  .safety-cta__actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.95rem 1.2rem;
+    border-radius: 999px;
+    text-decoration: none;
+    background: linear-gradient(135deg, #5f7d67 0%, #31443a 100%);
+    color: #fff;
+    font: 700 0.94rem/1 Poppins, sans-serif;
+  }
+
+  .safety-ribbon {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    border-top: 1px solid rgba(51, 66, 57, 0.12);
+    border-bottom: 1px solid rgba(51, 66, 57, 0.12);
+  }
+
+  .safety-stat {
+    padding: 1.2rem 1.25rem 1.3rem;
+    border: 0;
+    border-left: 1px solid rgba(51, 66, 57, 0.12);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .safety-stat:first-child {
+    border-left: 0;
+  }
+
+  .safety-stat__value,
+  .safety-principle__index {
+    margin: 0;
+    color: #42584a;
+    font: 700 clamp(1.8rem, 3vw, 2.75rem)/0.92 Georgia, serif;
+    letter-spacing: -0.04em;
+  }
+
+  .safety-stat h2,
+  .safety-principle h3,
+  .safety-signal h3,
+  .safety-resource h3 {
+    margin: 0;
+    color: #1d241f;
+    font-family: Georgia, serif;
+    line-height: 1.04;
+  }
+
+  .safety-stat h2 {
+    font-size: 1.4rem;
+  }
+
+  .safety-intro,
+  .safety-principles,
+  .safety-signals,
+  .safety-resources,
+  .safety-cta {
+    padding: 1.75rem;
+  }
+
+  .safety-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .safety-intro h2,
+  .safety-principles h2,
+  .safety-signals h2,
+  .safety-resources h2,
+  .safety-body h2,
+  .safety-cta h2 {
+    font-size: clamp(2rem, 3vw, 3.15rem);
+  }
+
+  .safety-intro__heading,
+  .safety-intro__body,
+  .safety-principles__heading,
+  .safety-signals__heading,
+  .safety-resources__heading,
+  .safety-body__heading,
+  .safety-cta__copy {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .safety-principles__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.35rem;
+  }
+
+  .safety-principle {
+    display: grid;
+    gap: 0.8rem;
+    padding: 1.25rem 0 0;
+    border-top: 1px solid rgba(51, 66, 57, 0.14);
+  }
+
+  .safety-principle--lead {
+    grid-column: span 2;
+    padding-right: 1.5rem;
+  }
+
+  .safety-principle h3 {
+    font-size: clamp(1.4rem, 2vw, 1.9rem);
+  }
+
+  .safety-signals__grid,
+  .safety-resources__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.35rem;
+  }
+
+  .safety-signal,
+  .safety-resource {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1.15rem 0 0;
+    border-top: 1px solid rgba(51, 66, 57, 0.12);
+  }
+
+  .safety-body__inner {
+    padding: 1.75rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .safety-richtext :global(h2),
+  .safety-richtext :global(h3) {
+    margin: 1.8rem 0 0;
+    color: #1d241f;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .safety-richtext :global(h2) {
+    font-family: Georgia, serif;
+    font-size: clamp(1.8rem, 2.8vw, 2.5rem);
+  }
+
+  .safety-richtext :global(h3) {
+    font-family: Georgia, serif;
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+  }
+
+  .safety-richtext :global(ul),
+  .safety-richtext :global(ol) {
+    margin: 0;
+    padding-left: 1.35rem;
+  }
+
+  .safety-richtext :global(a) {
+    color: #3f5d4a;
+  }
+
+  .safety-cta {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    background:
+      radial-gradient(circle at right center, rgba(95, 125, 103, 0.1), transparent 18rem),
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,249,245,0.94));
+  }
+
+  .safety-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .safety-cta__secondary {
+    background: transparent !important;
+    border: 1px solid rgba(63, 93, 74, 0.2);
+    color: #3f5d4a !important;
+  }
+
+  @media (max-width: 980px) {
+    .post-page__hero,
+    .post-page__content,
+    .blog-index__grid,
+    .location-stats,
+    .location-overview,
+    .about-hero,
+    .about-ribbon,
+    .about-stats,
+    .about-timeline,
+    .about-narrative,
+    .about-gallery,
+    .about-gallery__grid,
+    .about-hero__summary,
+    .faq-hero,
+    .faq-ribbon,
+    .faq-intro,
+    .faq-featured__grid,
+    .faq-library__groups,
+    .faq-cta,
+    .safety-hero,
+    .safety-ribbon,
+    .safety-intro,
+    .safety-principles__grid,
+    .safety-signals__grid,
+    .safety-resources__grid,
+    .safety-cta {
+      grid-template-columns: 1fr;
+    }
+
+    .about-hero__note {
+      margin-left: 0;
+      margin-top: 0;
+    }
+
+    .about-stat {
+      border-left: 0;
+      border-top: 1px solid rgba(88, 50, 58, 0.12);
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .about-stat:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .faq-stat {
+      border-left: 0;
+      border-top: 1px solid rgba(88, 50, 58, 0.12);
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .faq-stat:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .safety-stat {
+      border-left: 0;
+      border-top: 1px solid rgba(51, 66, 57, 0.12);
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .safety-stat:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .faq-featured__item--lead {
+      grid-column: span 1;
+      padding-right: 0;
+    }
+
+    .safety-principle--lead {
+      grid-column: span 1;
+      padding-right: 0;
+    }
+
+    .related-posts__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .post-page__rail {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .post-page {
+      padding: 2.8rem 0 4rem;
+    }
+
+    .post-page__hero {
+      margin-bottom: 2rem;
+    }
+
+    .post-page__meta {
+      gap: 0.6rem;
+    }
+
+    .related-posts__grid,
+    .blog-index {
+      grid-template-columns: 1fr;
+    }
+
+    .blog-index {
+      padding: 3.5rem 0 4rem;
+    }
+
+    .blog-card__body {
+      padding: 1rem;
+    }
+
+    .location-page {
+      padding: 2rem 0 4rem;
+    }
+
+    .location-hero {
+      min-height: 26rem;
+      align-items: end;
+    }
+
+    .location-cta {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .about-page {
+      padding: 2.5rem 0 4rem;
+    }
+
+    .faq-page {
+      padding: 2.5rem 0 4rem;
+    }
+
+    .safety-page {
+      padding: 2.5rem 0 4rem;
+    }
+
+    .about-hero__copy,
+    .about-hero__media--portrait,
+    .about-gallery__item,
+    .about-gallery__item--large {
+      min-height: auto;
+    }
+
+    .faq-hero {
+      min-height: 28rem;
+      padding: 1rem;
+    }
+
+    .faq-intro,
+    .faq-featured,
+    .faq-group,
+    .faq-cta {
+      padding: 1.2rem;
+    }
+
+    .faq-cta {
+      align-items: stretch;
+    }
+
+    .safety-hero {
+      min-height: 28rem;
+      padding: 1rem;
+    }
+
+    .safety-intro,
+    .safety-principles,
+    .safety-signals,
+    .safety-resources,
+    .safety-body__inner,
+    .safety-cta {
+      padding: 1.2rem;
+    }
+
+    .safety-cta {
+      align-items: stretch;
+    }
+
+    .about-cta {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>

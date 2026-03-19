@@ -1,0 +1,22 @@
+{
+  "name": "blossoms-astro",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "fetch:data": "node scripts/fetch-wordpress.mjs",
+    "fetch:data:images": "LOCALIZE_IMAGES=1 node scripts/fetch-wordpress.mjs",
+    "db:sync:blog-posts": "node scripts/sync-blog-posts-to-turso.mjs",
+    "admin:bootstrap": "ALLOW_ADMIN_BOOTSTRAP=true node scripts/bootstrap-admin.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.5",
+    "@better-auth/cli": "^1.4.21",
+    "@libsql/client": "^0.15.15",
+    "astro": "^5.3.1",
+    "better-auth": "^1.5.5"
+  }
+}

@@ -1,0 +1,218 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import global from "../../data/global.json";
+import { listBlogPosts } from "../../lib/posts";
+import { mapBlogListPost } from "../../lib/blog-page";
+import { toRelativeSiteUrl } from "../../lib/url-utils";
+import {
+  buildBreadcrumbSchema,
+  buildCollectionPageSchema,
+} from "../../lib/seo";
+
+export const prerender = true;
+
+const posts = (await listBlogPosts()).map(mapBlogListPost);
+const title = "Asian Dating Advice Blog | Cherry Blossoms Journal";
+const description =
+  "Explore Asian dating advice, Filipina dating insights, long-distance relationship tips, and online dating safety guidance from Cherry Blossoms.";
+const schema = [
+  buildCollectionPageSchema({
+    title,
+    description,
+    url: "/blog/",
+  }),
+  buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog/" },
+  ]),
+];
+---
+
+<SiteLayout
+  title={title}
+  description={description}
+  canonical={toRelativeSiteUrl("/blog/")}
+  bodyClass={global.bodyClass}
+  global={global}
+  seo={{ title, description, schema }}
+>
+  <section class="blog-index">
+    <div class="blog-index__shell">
+      <div class="blog-index__hero">
+        <p class="blog-index__eyebrow">Blossoms Journal</p>
+        <h1>Dating advice, safety guidance, and real relationship stories.</h1>
+        <p class="blog-index__lede">{description}</p>
+      </div>
+
+      <div class="blog-index__grid">
+        {posts.map((post) => (
+          <article class="blog-card">
+            {post.image && (
+              <a href={post.href} aria-label={`Read ${post.title}`}>
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+            )}
+            <div class="blog-card__body">
+              <p class="blog-card__meta">
+                {post.date &&
+                  new Date(post.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+              </p>
+              <h2>
+                <a href={post.href}>{post.title}</a>
+              </h2>
+              <p>{post.excerpt}</p>
+              <a class="blog-card__link" href={post.href}>
+                Read article
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .blog-index {
+    padding: 4.5rem 0 5.5rem;
+    background:
+      radial-gradient(circle at top left, rgba(233, 118, 93, 0.12), transparent 28rem),
+      linear-gradient(180deg, #fff9f6 0%, #fffdfc 100%);
+  }
+
+  .blog-index__shell {
+    width: min(1220px, calc(100% - 2rem));
+    margin: 0 auto;
+  }
+
+  .blog-index__hero {
+    margin-bottom: 2.5rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .blog-index__eyebrow {
+    margin: 0 0 0.75rem;
+    color: #a42a34;
+    font: 700 0.8rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .blog-index h1 {
+    margin: 0;
+    color: #24161c;
+    font-size: clamp(2.7rem, 5vw, 4.8rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+  }
+
+  .blog-index__lede {
+    margin: 1.1rem 0 0;
+    max-width: 40rem;
+    color: #67545b;
+    font-size: 1.08rem;
+    line-height: 1.75;
+  }
+
+  .blog-index__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.4rem;
+  }
+
+  .blog-card {
+    overflow: clip;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.6rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1.4rem 3rem rgba(121, 57, 67, 0.08);
+  }
+
+  .blog-card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .blog-card__body {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1.15rem 1.15rem 1.25rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .blog-card__meta {
+    margin: 0;
+    color: #8d6f78;
+    font: 600 0.78rem/1.2 Poppins, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .blog-card h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+
+  .blog-card h2 a {
+    color: #24161c;
+    text-decoration: none;
+  }
+
+  .blog-card h2 a:hover,
+  .blog-card__link:hover {
+    color: #a42a34;
+  }
+
+  .blog-card__body > p:last-of-type {
+    margin: 0;
+    color: #67545b;
+    line-height: 1.72;
+  }
+
+  .blog-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #a42a34;
+    font: 700 0.92rem/1.2 Poppins, sans-serif;
+    text-decoration: none;
+  }
+
+  .blog-card__link::after {
+    content: "→";
+  }
+
+  @media (max-width: 980px) {
+    .blog-index__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .blog-index {
+      padding: 3.5rem 0 4rem;
+    }
+
+    .blog-index__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .blog-card__body {
+      padding: 1rem;
+    }
+  }
+</style>

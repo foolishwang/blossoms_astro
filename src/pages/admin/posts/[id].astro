@@ -1,0 +1,30 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { getBlogPostById } from "../../../lib/posts";
+
+const id = Number(Astro.params.id);
+const post = Number.isFinite(id) ? await getBlogPostById(id) : null;
+
+if (!post) {
+  Astro.response.status = 404;
+}
+---
+<AdminLayout title="Edit Post | Blossoms Admin">
+  {
+    !post ? (
+      <section><h1>Post not found</h1></section>
+    ) : (
+      <>
+        <div
+          id="editor-root"
+          data-mode="edit"
+          data-submit-url={`/api/admin/posts/${post.id}`}
+          data-initial-json={JSON.stringify(post)}
+        ></div>
+        <script type="module">
+          import "/src/scripts/admin-editor-boot.ts";
+        </script>
+      </>
+    )
+  }
+</AdminLayout>
