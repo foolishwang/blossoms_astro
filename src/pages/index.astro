@@ -270,7 +270,7 @@ const homeSchema = [
           <iframe
             id="home-stream-player"
             class="video-hero__media"
-            src="https://customer-8t8x7431waj10zps.cloudflarestream.com/1a390dc7e554d93a2a8e344523321eda/iframe?autoplay=true&muted=true&loop=true&controls=false&letterboxColor=transparent&poster=https%3A%2F%2Fcustomer-8t8x7431waj10zps.cloudflarestream.com%2F1a390dc7e554d93a2a8e344523321eda%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600"
+            src="https://customer-8t8x7431waj10zps.cloudflarestream.com/1a390dc7e554d93a2a8e344523321eda/iframe?autoplay=false&muted=true&loop=true&controls=false&letterboxColor=transparent&poster=https%3A%2F%2Fcustomer-8t8x7431waj10zps.cloudflarestream.com%2F1a390dc7e554d93a2a8e344523321eda%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600"
             title="Cherry Blossoms introduction video"
             loading="lazy"
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
@@ -662,10 +662,26 @@ const homeSchema = [
       const iframe = document.getElementById("home-stream-player");
       const button = document.querySelector("[data-home-video-toggle]");
       const label = document.querySelector("[data-home-video-toggle-label]");
-      if (!iframe || !button || !label) return;
+      const videoHero = document.querySelector(".video-hero");
+      if (!iframe || !button || !label || !videoHero) return;
 
       let player = null;
       let isMuted = true;
+      let isVideoVisible = false;
+
+      const syncPlayback = async () => {
+        if (!player) return;
+
+        try {
+          if (isVideoVisible) {
+            await player.play();
+          } else {
+            await player.pause();
+          }
+        } catch (_error) {
+          return;
+        }
+      };
 
       const syncButton = () => {
         button.setAttribute("aria-pressed", String(!isMuted));
@@ -690,6 +706,7 @@ const homeSchema = [
         player.muted = true;
         player.loop = true;
         syncButton();
+        syncPlayback();
 
         button.addEventListener("click", async () => {
           if (!player) return;
@@ -710,6 +727,20 @@ const homeSchema = [
 
         return true;
       };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const [entry] = entries;
+          isVideoVisible =
+            Boolean(entry?.isIntersecting) && (entry?.intersectionRatio ?? 0) >= 0.35;
+          syncPlayback();
+        },
+        {
+          threshold: [0, 0.35, 0.65],
+        },
+      );
+
+      observer.observe(videoHero);
 
       if (setupPlayer()) return;
 
