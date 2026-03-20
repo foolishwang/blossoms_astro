@@ -1,0 +1,45 @@
+---
+import BlogPostRoute from "../../blog/[...slug].astro";
+import { listBlogPosts } from "../../../lib/posts";
+import { mapRelatedPost } from "../../../lib/blog-page";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "../../../lib/i18n";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const posts = await listBlogPosts();
+
+  return LOCALES.filter((locale) => locale !== DEFAULT_LOCALE).flatMap(
+    (locale) =>
+      posts.map((post) => ({
+        params: {
+          lang: locale,
+          slug: post.route.replace(/^\/blog\//, "").replace(/\/$/, ""),
+        },
+        props: {
+          locale,
+          post,
+          relatedPosts: posts
+            .filter((entry) => entry.route !== post.route)
+            .slice(0, 3)
+            .map(mapRelatedPost),
+          localizedPath: `/${locale}${post.route}`,
+        },
+      })),
+  );
+}
+
+const { locale, post, relatedPosts, localizedPath } = Astro.props as {
+  locale: Locale;
+  post: Awaited<ReturnType<typeof listBlogPosts>>[number];
+  relatedPosts: ReturnType<typeof mapRelatedPost>[];
+  localizedPath: string;
+};
+---
+
+<BlogPostRoute
+  locale={locale}
+  post={post}
+  relatedPosts={relatedPosts}
+  localizedPath={localizedPath}
+/>

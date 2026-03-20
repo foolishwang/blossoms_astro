@@ -1,0 +1,36 @@
+---
+import routes from "../../data/routes.json";
+import GenericPage from "../[...slug].astro";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "../../lib/i18n";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  const contentRoutes = routes.filter(
+    (route) => route.route !== "/" && !route.route.startsWith("/blog/"),
+  );
+
+  return LOCALES.filter((locale) => locale !== DEFAULT_LOCALE).flatMap(
+    (locale) =>
+      contentRoutes.map((entry) => ({
+        params: {
+          lang: locale,
+          slug: entry.route.replace(/^\/|\/$/g, "") || undefined,
+        },
+        props: {
+          locale,
+          entry,
+          localizedPath: `/${locale}${entry.route}`,
+        },
+      })),
+  );
+}
+
+const { locale, entry, localizedPath } = Astro.props as {
+  locale: Locale;
+  entry: (typeof routes)[number];
+  localizedPath: string;
+};
+---
+
+<GenericPage locale={locale} entry={entry} localizedPath={localizedPath} />
