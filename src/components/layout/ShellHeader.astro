@@ -1,15 +1,64 @@
 ---
-const { siteTitle = "Cherry Blossoms" } = Astro.props;
+import {
+  DEFAULT_LOCALE,
+  UI_STRINGS,
+  getLanguageOptions,
+  localizePath,
+  stripLocalePrefix,
+  type Locale,
+} from "../../lib/i18n";
+
+const {
+  siteTitle = "Cherry Blossoms",
+  locale = DEFAULT_LOCALE,
+  currentPath = "/",
+  showLanguageSwitcher = true,
+} = Astro.props as {
+  siteTitle?: string;
+  locale?: Locale;
+  currentPath?: string;
+  showLanguageSwitcher?: boolean;
+};
 const pathname = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
   : `${Astro.url.pathname}/`;
+const basePathname = stripLocalePrefix(pathname);
+const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
+const languageOptions = showLanguageSwitcher
+  ? getLanguageOptions(currentPath)
+  : [];
+
+const navLinks = [
+  { href: localizePath("/", locale), label: ui.nav.home, match: "/" },
+  {
+    href: localizePath("/about-us/", locale),
+    label: ui.nav.about,
+    match: "/about-us/",
+  },
+  {
+    href: localizePath("/dating-safety/", locale),
+    label: ui.nav.datingSafety,
+    match: "/dating-safety/",
+  },
+  {
+    href: localizePath("/frequently-asked-questions/", locale),
+    label: ui.nav.faqs,
+    match: "/frequently-asked-questions/",
+  },
+  {
+    href: localizePath("/#locations", locale),
+    label: ui.nav.locations,
+    match: "/#locations",
+  },
+  { href: "/blog/", label: ui.nav.blog, match: "/blog/" },
+];
 
 function isActivePath(href = "") {
-  if (href === "/") return pathname === "/";
+  if (href === "/") return basePathname === "/";
   if (href === "/blog/")
-    return pathname === "/blog/" || pathname.startsWith("/blog/");
-  if (href === "/#locations") return pathname === "/";
-  return pathname === href;
+    return basePathname === "/blog/" || basePathname.startsWith("/blog/");
+  if (href === "/#locations") return basePathname === "/";
+  return basePathname === href;
 }
 ---
 
@@ -31,57 +80,85 @@ function isActivePath(href = "") {
       <span></span>
     </button>
     <nav class="cb-shell-nav" id="main-nav" aria-label="Primary">
-      <a href="/" aria-current={isActivePath("/") ? "page" : undefined}>Home</a>
-      <a
-        href="/about-us/"
-        aria-current={isActivePath("/about-us/") ? "page" : undefined}
-        >About Us</a
-      >
-      <a
-        href="/dating-safety/"
-        aria-current={isActivePath("/dating-safety/") ? "page" : undefined}
-        >Dating Safety</a
-      >
-      <a
-        href="/frequently-asked-questions/"
-        aria-current={isActivePath("/frequently-asked-questions/")
-          ? "page"
-          : undefined}>FAQs</a
-      >
-      <a
-        href="/#locations"
-        aria-current={isActivePath("/#locations") ? "page" : undefined}
-        >Locations</a
-      >
-      <a
-        href="/blog/"
-        aria-current={isActivePath("/blog/") ? "page" : undefined}>Blog</a
-      >
+      {
+        navLinks.map((link) => (
+          <a
+            href={link.href}
+            aria-current={isActivePath(link.match) ? "page" : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
       <div class="cb-shell-nav-actions">
+        {
+          showLanguageSwitcher && (
+            <label class="cb-language-picker cb-language-picker--mobile">
+              <select data-language-switcher>
+                {languageOptions.map((option) => (
+                  <option
+                    value={option.href}
+                    selected={option.locale === locale}
+                  >
+                    {option.nativeLabel}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )
+        }
         <a class="cb-shell-link" href="https://members.blossoms.com/login.php"
-          >Login</a
+          >{ui.nav.login}</a
         >
         <a
           class="cb-shell-button"
-          href="https://members.blossoms.com/register.php">Register</a
+          href="https://members.blossoms.com/register.php">{ui.nav.register}</a
         >
       </div>
     </nav>
     <div class="cb-shell-actions desktop-only">
+      {
+        showLanguageSwitcher && (
+          <label class="cb-language-picker">
+            <select data-language-switcher>
+              {languageOptions.map((option) => (
+                <option value={option.href} selected={option.locale === locale}>
+                  {option.nativeLabel}
+                </option>
+              ))}
+            </select>
+          </label>
+        )
+      }
       <a class="cb-shell-link" href="https://members.blossoms.com/login.php"
-        >Login</a
+        >{ui.nav.login}</a
       >
       <a
         class="cb-shell-button"
-        href="https://members.blossoms.com/register.php">Register</a
+        href="https://members.blossoms.com/register.php">{ui.nav.register}</a
       >
     </div>
   </div>
 </header>
 
 <script is:inline>
+  const languageStorageKey = "cb-preferred-language";
   const toggle = document.getElementById("mobile-toggle");
   const nav = document.getElementById("main-nav");
+  const languageSwitchers = document.querySelectorAll(
+    "[data-language-switcher]",
+  );
+
+  languageSwitchers.forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLSelectElement)) return;
+      const nextHref = target.value;
+      const nextLocale = nextHref.match(/^\/([a-z-]+)\//i)?.[1] || "en";
+      window.localStorage.setItem(languageStorageKey, nextLocale);
+      window.location.href = nextHref;
+    });
+  });
 
   if (toggle && nav) {
     toggle.addEventListener("click", () => {
@@ -162,6 +239,22 @@ function isActivePath(href = "") {
     display: flex;
     align-items: center;
     gap: 0.85rem;
+  }
+
+  .cb-language-picker {
+    display: inline-flex;
+  }
+
+  .cb-language-picker select {
+    min-height: 2.15rem;
+    padding: 0.42rem 2rem 0.42rem 0.75rem;
+    border: 1px solid rgba(164, 42, 52, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #5a2e39;
+    font:
+      600 0.82rem/1.1 Poppins,
+      sans-serif;
   }
 
   .cb-shell-mobile-toggle {
@@ -274,6 +367,15 @@ function isActivePath(href = "") {
       gap: 1rem;
       width: 100%;
       margin-top: 2rem;
+    }
+
+    .cb-language-picker,
+    .cb-language-picker select {
+      width: 100%;
+    }
+
+    .cb-language-picker__label {
+      font-size: 0.72rem;
     }
 
     .desktop-only {

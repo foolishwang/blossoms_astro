@@ -15,6 +15,7 @@ import {
   toRelativeSiteUrl,
 } from "../../lib/url-utils";
 import { buildBlogPostingSchema, buildBreadcrumbSchema } from "../../lib/seo";
+import { DEFAULT_LOCALE } from "../../lib/i18n";
 
 export const prerender = true;
 
@@ -75,6 +76,8 @@ const schema = [
   canonical={toRelativeSiteUrl(post.route)}
   bodyClass={global.bodyClass}
   global={global}
+  locale={DEFAULT_LOCALE}
+  showLanguageSwitcher={false}
   seo={{
     title,
     description,

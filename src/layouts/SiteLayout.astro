@@ -2,6 +2,13 @@
 import ShellFooter from "../components/layout/ShellFooter.astro";
 import ShellHeader from "../components/layout/ShellHeader.astro";
 import {
+  DEFAULT_LOCALE,
+  buildLocaleAlternates,
+  getLocaleMeta,
+  localizePath,
+  type Locale,
+} from "../lib/i18n";
+import {
   localizeBlossomsAssetHtml,
   toAbsoluteSiteUrl,
   toLocalBlossomsAssetUrl,
@@ -15,7 +22,11 @@ const {
   bodyClass = "",
   global,
   seo = {},
+  locale = DEFAULT_LOCALE,
+  localizedPath,
+  showLanguageSwitcher = true,
 } = Astro.props;
+const currentLocale = locale as Locale;
 
 const robots = seo.robots || {};
 const robotsContent = [
@@ -47,10 +58,15 @@ const fontFaceStyles = localizeBlossomsAssetHtml(
 );
 const resolvedOgImage = seo.ogImage || DEFAULT_OG_IMAGE;
 const resolvedTwitterImage = seo.twitterImage || resolvedOgImage;
+const localeMeta = getLocaleMeta(currentLocale);
+const currentPath = localizedPath || canonical || "/";
+const localeAlternates = showLanguageSwitcher
+  ? buildLocaleAlternates(currentPath)
+  : [];
 ---
 
 <!doctype html>
-<html lang="en" class="no-js">
+<html lang={localeMeta.htmlLang} class="no-js">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -72,11 +88,20 @@ const resolvedTwitterImage = seo.twitterImage || resolvedOgImage;
     />
     <meta property="og:type" content={seo.ogType || "website"} />
     <meta property="og:site_name" content="Cherry Blossoms Dating" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={localeMeta.ogLocale} />
     {
       absoluteCanonical && (
         <meta property="og:url" content={absoluteCanonical} />
       )
+    }
+    {
+      localeAlternates.map((alternate) => (
+        <link
+          rel="alternate"
+          hreflang={alternate.hrefLang}
+          href={toAbsoluteSiteUrl(alternate.href)}
+        />
+      ))
     }
     <meta property="og:image" content={resolvedOgImage} />
     <meta
@@ -191,13 +216,48 @@ const resolvedTwitterImage = seo.twitterImage || resolvedOgImage;
         <script type="application/ld+json" set:html={JSON.stringify(schema)} />
       ))
     }
+    {
+      showLanguageSwitcher && (
+        <script
+          is:inline
+          define:vars={{
+            currentLocale,
+            currentPath,
+            defaultLocale: DEFAULT_LOCALE,
+            redirectTemplate: localizePath(currentPath, "__LOCALE__" as Locale),
+          }}
+        >
+          const storageKey = "cb-preferred-language";
+          const botPattern =
+            /bot|crawler|spider|crawling|facebookexternalhit|slurp|bingpreview/i;
+
+          if (!botPattern.test(navigator.userAgent || "")) {
+            const savedLocale = window.localStorage.getItem(storageKey);
+
+            if (currentLocale !== defaultLocale) {
+              window.localStorage.setItem(storageKey, currentLocale);
+            } else if (savedLocale && savedLocale !== defaultLocale) {
+              const redirectHref = redirectTemplate.replace("__LOCALE__", savedLocale);
+              if (redirectHref && redirectHref !== window.location.pathname) {
+                window.location.replace(redirectHref);
+              }
+            }
+          }
+        </script>
+      )
+    }
     <script is:inline>
       document.documentElement.classList.remove("no-js");
     </script>
   </head>
   <body class={resolvedBodyClass}>
     <div id="wrapper" class="site wp-site-blocks">
-      <ShellHeader siteTitle={siteTitle} />
+      <ShellHeader
+        siteTitle={siteTitle}
+        locale={currentLocale}
+        currentPath={currentPath}
+        showLanguageSwitcher={showLanguageSwitcher}
+      />
       <main
         id="inner-wrap"
         class="wrap kt-clear astro-site-content"
@@ -207,7 +267,7 @@ const resolvedTwitterImage = seo.twitterImage || resolvedOgImage;
           <slot />
         </div>
       </main>
-      <ShellFooter />
+      <ShellFooter locale={currentLocale} currentPath={currentPath} />
     </div>
   </body>
 </html>

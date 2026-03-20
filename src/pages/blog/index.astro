@@ -10,6 +10,7 @@ import {
   buildCollectionPageSchema,
   buildItemListSchema,
 } from "../../lib/seo";
+import { DEFAULT_LOCALE } from "../../lib/i18n";
 
 export const prerender = true;
 
@@ -44,6 +45,8 @@ const schema = [
   canonical={toRelativeSiteUrl("/blog/")}
   bodyClass={global.bodyClass}
   global={global}
+  locale={DEFAULT_LOCALE}
+  showLanguageSwitcher={false}
   seo={{ title, description, schema }}
 >
   <BlogIndexSection

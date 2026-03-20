@@ -2,6 +2,8 @@
 import routes from "../data/routes.json";
 import global from "../data/global.json";
 import SiteLayout from "../layouts/SiteLayout.astro";
+import { DEFAULT_LOCALE, UI_STRINGS, localizePath, type Locale } from "../lib/i18n";
+import { HOME_PAGE_COPY } from "../lib/home-page-copy";
 import { toLocalBlossomsAssetUrl, toRelativeSiteUrl } from "../lib/url-utils";
 import {
   buildBreadcrumbSchema,
@@ -10,6 +12,15 @@ import {
 } from "../lib/seo";
 
 const home = routes.find((entry) => entry.route === "/");
+const {
+  locale = DEFAULT_LOCALE,
+  localizedPath = "/",
+} = Astro.props as {
+  locale?: Locale;
+  localizedPath?: string;
+};
+const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
+const homeCopy = HOME_PAGE_COPY[locale] || HOME_PAGE_COPY[DEFAULT_LOCALE];
 
 if (!home) {
   throw new Error("Homepage route not found in routes.json");
@@ -90,8 +101,13 @@ function extractLocations(content = "") {
   }));
 }
 
-const testimonials = extractTestimonials(home.content);
-const faqItems = extractFaqItems(home.content);
+const extractedTestimonials = extractTestimonials(home.content);
+const testimonials = homeCopy.testimonials.map((item, index) => ({
+  ...extractedTestimonials[index],
+  quote: item.quote,
+  name: item.name,
+}));
+const faqItems = homeCopy.faqItems;
 const locations = extractLocations(home.content);
 const popularCities = locations.flatMap((group) => group.cities).slice(0, 18);
 
@@ -116,92 +132,48 @@ const featuredLogos = [
   },
 ];
 
-const trustPoints = [
-  "Undefeated Champions of Asian Dating. Over 50 years of match-making success and proven results.",
-  "Exclusive free access for Asian women to keep the community active, balanced, and genuine.",
-  "Advanced security technology with profile validation and privacy safeguards.",
-];
-
-const stats = [
-  {
-    value: "86%",
-    label: "User Engagement",
-    description: "Of actively engaged chats within 24 hours of joining.",
-  },
-  {
-    value: "5M",
-    label: "Perfect Match",
-    description: "Successful matches made since the platform's launch.",
-  },
-  {
-    value: "34K+",
-    label: "Love Online",
-    description: "Messages exchanged daily on the platform on average.",
-  },
-];
-
-const pillars = [
-  {
-    id: "different",
-    tab: "Why We're Different",
-    title:
-      "Why Blossoms feels different from faster, lower-trust dating platforms",
-    body: "Blossoms is built around trust signals that matter in Asian dating: profile verification, safer messaging, a longer operating history, and a member base oriented toward real relationships instead of disposable attention loops.",
-  },
-  {
-    id: "using",
-    tab: "Using Blossoms.com",
-    title: "A long-running Asian dating brand with clearer expectations",
-    body: "Finding the right Asian dating site can be difficult when most platforms optimize for noise. Blossoms takes a more deliberate route, pairing decades of matchmaking experience with a product shaped around sincerity, safety, and long-term intent.",
-  },
-  {
-    id: "love",
-    tab: "Long-Term Love",
-    title: "Meet Asian singles in a setting built for long-term relationships",
-    body: "Cherry Blossoms supports international dating for people looking for something serious. Whether your focus is Asian dating broadly or Filipina dating in specific city pages, the platform is structured around meaningful connection rather than casual swiping.",
-  },
-];
+const stats = homeCopy.statCards;
+const pillars = homeCopy.pillars;
 
 const bodyClass =
   global.bodyClass ||
   "home wp-singular page-template-default page page-id-44 wp-custom-logo wp-embed-responsive wp-theme-kadence footer-on-bottom hide-focus-outline link-style-standard content-title-style-hide content-width-fullwidth content-style-unboxed content-vertical-padding-hide non-transparent-header mobile-non-transparent-header";
-const homeTitle =
-  "Cherry Blossoms Asian Dating | International Asian Dating Since 1974";
-const homeDescription =
-  "Cherry Blossoms is an Asian dating site for people seeking meaningful international relationships. Discover Asian dating, real members, and long-term connections since 1974.";
+const homeTitle = ui.seo.homeTitle;
+const homeDescription = ui.seo.homeDescription;
 const homeSchema = [
   buildWebPageSchema({
     title: homeTitle,
     description: homeDescription,
-    url: "/",
+    url: localizedPath,
   }),
   buildItemListSchema({
-    name: "Popular Filipina dating cities",
-    url: "/#locations",
+    name: homeCopy.locationsTitle,
+    url: localizePath("/#locations", locale),
     items: popularCities.map((city) => ({
       name: city.label,
       url: city.href,
     })),
   }),
-  buildBreadcrumbSchema([{ name: "Home", url: "/" }]),
+  buildBreadcrumbSchema([{ name: ui.nav.home, url: localizedPath }]),
 ];
 ---
 
 <SiteLayout
   title={homeTitle}
   description={homeDescription}
-  canonical={toRelativeSiteUrl(home.link)}
+  canonical={toRelativeSiteUrl(localizedPath)}
   bodyClass={bodyClass}
   global={global}
+  locale={locale}
+  localizedPath={localizedPath}
   seo={{
     ...(home.seo || {}),
     title: homeTitle,
     description: homeDescription,
-    keywords:
-      "Asian dating, Asian dating site, Filipina dating, Filipino dating site, Philippines dating site, Asian singles, Filipina singles, international dating, serious relationships, Cherry Blossoms Dating",
-    ogTitle: "Cherry Blossoms | Asian Dating Since 1974",
+    keywords: ui.seo.homeKeywords,
+    ogTitle: homeTitle,
     ogDescription: homeDescription,
-    twitterTitle: "Cherry Blossoms | Asian Dating Since 1974",
+    twitterTitle: homeTitle,
     twitterDescription: homeDescription,
     schema: homeSchema,
   }}
@@ -212,15 +184,15 @@ const homeSchema = [
       <div class="hero__backdrop"></div>
       <div class="shell hero__grid">
         <aside class="cb-hero-box">
-          <h2 class="cb-hero-title">🌸 Start Your Journey</h2>
+          <h2 class="cb-hero-title">🌸 {ui.home.badge}</h2>
           <a
             class="cb-btn cb-btn-male"
             href="https://members.blossoms.com/register.php?gender=male&adid=www"
             target="_blank"
             rel="noreferrer noopener"
           >
-            <span class="cb-line1">I Am a Man...</span>
-            <span class="cb-line2">Seeking a Meaningful Relationship</span>
+            <span class="cb-line1">{ui.home.manTitle}</span>
+            <span class="cb-line2">{ui.home.manBody}</span>
           </a>
           <a
             class="cb-btn cb-btn-female"
@@ -228,17 +200,17 @@ const homeSchema = [
             target="_blank"
             rel="noreferrer noopener"
           >
-            <span class="cb-line1">I Am a Woman...</span>
-            <span class="cb-line2">Seeking a Meaningful Relationship</span>
+            <span class="cb-line1">{ui.home.womanTitle}</span>
+            <span class="cb-line2">{ui.home.womanBody}</span>
           </a>
           <div class="cb-trust">
-            ✓ Established Since 1974<br />
-            ✓ Real Members Worldwide
+            ✓ {ui.home.trustOne}<br />
+            ✓ {ui.home.trustTwo}
           </div>
           <div class="cb-login">
             <strong>
-              Already a Member?
-              <a href="https://members.blossoms.com/login.php">Login</a>
+              {ui.home.alreadyMember}
+              <a href="https://members.blossoms.com/login.php">{ui.nav.login}</a>
             </strong>
           </div>
         </aside>
@@ -246,8 +218,8 @@ const homeSchema = [
     </section>
 
     <section class="featured shell">
-      <p class="section-kicker">Featured In</p>
-      <h2>Cherry Blossoms and Asian dating coverage from major publications</h2>
+      <p class="section-kicker">{homeCopy.featuredKicker}</p>
+      <h2>{homeCopy.featuredTitle}</h2>
       <div class="featured__logos">
         {
           featuredLogos.map((logo) => (
@@ -271,7 +243,7 @@ const homeSchema = [
             id="home-stream-player"
             class="video-hero__media"
             src="https://customer-8t8x7431waj10zps.cloudflarestream.com/1a390dc7e554d93a2a8e344523321eda/iframe?autoplay=false&muted=true&loop=true&controls=false&letterboxColor=transparent&poster=https%3A%2F%2Fcustomer-8t8x7431waj10zps.cloudflarestream.com%2F1a390dc7e554d93a2a8e344523321eda%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600"
-            title="Cherry Blossoms introduction video"
+            title={homeCopy.videoTitle}
             loading="lazy"
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
             allowfullscreen></iframe>
@@ -283,7 +255,7 @@ const homeSchema = [
           aria-pressed="false"
         >
           <span class="video-hero__sound-icon" aria-hidden="true">♪</span>
-          <span data-home-video-toggle-label>Sound</span>
+          <span data-home-video-toggle-label>{homeCopy.videoSound}</span>
         </button>
         <button
           class="video-hero__fullscreen-toggle"
@@ -292,7 +264,7 @@ const homeSchema = [
           aria-pressed="false"
         >
           <span class="video-hero__fullscreen-icon" aria-hidden="true">⛶</span>
-          <span data-home-video-fullscreen-label>Full</span>
+          <span data-home-video-fullscreen-label>{homeCopy.videoFullscreen}</span>
         </button>
       </div>
     </section>
@@ -300,57 +272,43 @@ const homeSchema = [
     <section class="about shell">
       <div class="about__grid">
         <div class="about__content">
-          <p class="section-kicker">About Us</p>
-          <h2>Decades of Trust in Asian Dating</h2>
-          <p>
-            Cherry Blossoms has been helping people navigate Asian dating since
-            1974. The brand has lasted because it leans on trust, safer member
-            interactions, and a more serious relationship posture than the
-            average swipe-first dating product.
-          </p>
+          <p class="section-kicker">{homeCopy.aboutKicker}</p>
+          <h2>{homeCopy.aboutTitle}</h2>
+          <p>{homeCopy.aboutBody}</p>
           <ul class="about__list">
-            <li>
-              <strong>Global Reach:</strong> Connecting members from across the globe.
-            </li>
-            <li>
-              <strong>Verified Profiles:</strong> Stringent checks to ensure authenticity.
-            </li>
-            <li>
-              <strong>Matchmaking Heritage:</strong> Thousands of successful marriages.
-            </li>
+            {
+              homeCopy.aboutBullets.map((item) => (
+                <li>
+                  <strong>{item.label}:</strong> {item.detail}
+                </li>
+              ))
+            }
           </ul>
           <div class="panel-actions">
-            <a class="button-primary" href="/about-us/">Learn Our Story</a>
-            <a class="button-secondary" href="/dating-safety/">
-              Review Safety Tips
+            <a class="button-primary" href={localizePath("/about-us/", locale)}>{homeCopy.aboutPrimaryCta}</a>
+            <a class="button-secondary" href={localizePath("/dating-safety/", locale)}>
+              {homeCopy.aboutSecondaryCta}
             </a>
           </div>
         </div>
         <aside class="about__rail" aria-label="Trust highlights">
           <div class="about__seal">
-            <span>Since</span>
+            <span>{homeCopy.aboutSince}</span>
             <strong>1974</strong>
           </div>
           <div class="about__note">
-            <p class="about__note-label">Built For</p>
-            <p>
-              People who want commitment, cultural openness, and a platform with
-              real history behind it.
-            </p>
+            <p class="about__note-label">{homeCopy.aboutBuiltFor}</p>
+            <p>{homeCopy.aboutBuiltForBody}</p>
           </div>
           <div class="about__stats">
-            <article>
-              <strong>50+</strong>
-              <span>Years of matchmaking heritage</span>
-            </article>
-            <article>
-              <strong>Global</strong>
-              <span>Member network spanning borders</span>
-            </article>
-            <article>
-              <strong>Verified</strong>
-              <span>Profiles designed to build trust</span>
-            </article>
+            {
+              homeCopy.aboutStats.map((item) => (
+                <article>
+                  <strong>{item.value}</strong>
+                  <span>{item.detail}</span>
+                </article>
+              ))
+            }
           </div>
         </aside>
       </div>
@@ -359,24 +317,10 @@ const homeSchema = [
     <section class="platform overview">
       <div class="overview-card">
         <div class="overview-card__copy stack">
-          <p class="section-kicker">Platform Overview</p>
-          <h2 style="width:100%;">
-            A relationship-first Asian dating platform with more structure and
-            less noise
-          </h2>
+          <p class="section-kicker">{homeCopy.overviewKicker}</p>
+          <h2 style="width:100%;">{homeCopy.overviewTitle}</h2>
           <div class="overview-card__body">
-            <p>
-              Blossoms is designed for people who want to meet Asian singles in
-              a setting that feels more credible, more patient, and less
-              disposable than mainstream dating apps.
-            </p>
-            <p>
-              Profiles, messaging, and matching tools are meant to support real
-              conversations and long-term compatibility. If you want city- and
-              country-specific Filipina dating pages, those live deeper in the
-              site, while the homepage stays focused on the broader Cherry
-              Blossoms Asian dating brand.
-            </p>
+            {homeCopy.overviewBody.map((paragraph) => <p>{paragraph}</p>)}
           </div>
         </div>
 
@@ -391,11 +335,8 @@ const homeSchema = [
               decoding="async"
             />
             <div class="overview-card__caption">
-              <span>Editorial Selection</span>
-              <strong
-                >Real members. Relationship-first profiles. A platform built to
-                feel human.</strong
-              >
+              <span>{homeCopy.overviewCaptionKicker}</span>
+              <strong>{homeCopy.overviewCaptionTitle}</strong>
             </div>
           </div>
         </div>
@@ -418,15 +359,15 @@ const homeSchema = [
 
     <section class="pillars shell">
       <div class="pillars__intro">
-        <p class="section-kicker">Core Reasons</p>
-        <h2>Why people choose Blossoms for serious dating</h2>
+        <p class="section-kicker">{homeCopy.pillarsKicker}</p>
+        <h2>{homeCopy.pillarsTitle}</h2>
       </div>
 
       <div class="pillars__tabs" data-pillars>
         <div
           class="pillars__nav"
           role="tablist"
-          aria-label="Homepage value panels"
+          aria-label={homeCopy.pillarsAriaLabel}
         >
           {
             pillars.map((pillar, index) => (
@@ -467,14 +408,14 @@ const homeSchema = [
                         href="https://members.blossoms.com/register.php"
                         rel="nofollow"
                       >
-                        Join Us
+                        {homeCopy.pillarsPrimaryCta}
                       </a>
                       <a
                         class="button-secondary"
                         href="https://members.blossoms.com/login.php"
                         rel="nofollow"
                       >
-                        Login
+                        {ui.nav.login}
                       </a>
                     </div>
                   )}
@@ -491,18 +432,13 @@ const homeSchema = [
 
     <section class="stories shell">
       <div class="stories__intro">
-        <p class="section-kicker">Real People, Real Love</p>
-        <h2>Relationship stories from a long-running Asian dating community</h2>
-        <p>
-          Your journey to love should feel exciting and worry-free. Blossoms
-          prioritizes safety with verified profiles and privacy protection,
-          while helping you meet the right person with far more confidence than
-          generic dating platforms.
-        </p>
+        <p class="section-kicker">{homeCopy.storiesKicker}</p>
+        <h2>{homeCopy.storiesTitle}</h2>
+        <p>{homeCopy.storiesBody}</p>
         <div class="panel-actions">
-          <a class="button-primary" href="/blog/">Read the Journal</a>
-          <a class="button-secondary" href="/frequently-asked-questions/">
-            Browse FAQs
+          <a class="button-primary" href="/blog/">{homeCopy.storiesPrimaryCta}</a>
+          <a class="button-secondary" href={localizePath("/frequently-asked-questions/", locale)}>
+            {homeCopy.storiesSecondaryCta}
           </a>
         </div>
         <a
@@ -521,7 +457,7 @@ const homeSchema = [
       </div>
 
       <div class="stories__cards">
-        <h3>Success Stories</h3>
+        <h3>{homeCopy.storiesHeading}</h3>
         {
           testimonials.map((story) => (
             <a class="story-card" href={story.href}>
@@ -543,13 +479,9 @@ const homeSchema = [
 
     <section class="faq shell">
       <div class="faq__copy">
-        <p class="section-kicker">Questions & Answers</p>
-        <h2>Asian dating FAQ for memberships, trust, and how Blossoms works</h2>
-        <p>
-          Trust is part of the product, which is why the site keeps a strong
-          help and reference layer. These common questions cover membership,
-          messaging, billing, profile setup, and safety expectations.
-        </p>
+        <p class="section-kicker">{homeCopy.faqKicker}</p>
+        <h2>{homeCopy.faqTitle}</h2>
+        <p>{homeCopy.faqBody}</p>
 
         <div class="faq__items">
           {
@@ -578,11 +510,9 @@ const homeSchema = [
 
     <section class="locations shell" id="locations">
       <div class="locations__intro">
-        <p class="section-kicker">Coverage</p>
-        <h2>
-          Explore Philippines city pages for people specifically looking for
-          Filipina dating by location
-        </h2>
+        <p class="section-kicker">{homeCopy.locationsKicker}</p>
+        <h2>{homeCopy.locationsTitle}</h2>
+        <p>{homeCopy.locationsSummary}</p>
       </div>
 
       <div class="locations__popular">
@@ -596,7 +526,7 @@ const homeSchema = [
       </div>
 
       <details class="locations__disclosure">
-        <summary>Browse supported cities and provinces</summary>
+        <summary>{homeCopy.locationsDisclosure}</summary>
         <div class="locations__grid">
           {
             locations.map((group) => (
@@ -665,6 +595,8 @@ const homeSchema = [
       const videoHero = document.querySelector(".video-hero");
       if (!iframe || !button || !label || !videoHero) return;
 
+      const soundLabel = {JSON.stringify(homeCopy.videoSound)};
+      const muteLabel = {JSON.stringify(homeCopy.videoMute)};
       let player = null;
       let isMuted = true;
       let isVideoVisible = false;
@@ -686,7 +618,7 @@ const homeSchema = [
       const syncButton = () => {
         button.setAttribute("aria-pressed", String(!isMuted));
         button.classList.toggle("is-active", !isMuted);
-        label.textContent = isMuted ? "Sound" : "Mute";
+        label.textContent = isMuted ? soundLabel : muteLabel;
       };
 
       window.__homeVideoControls = {
@@ -758,11 +690,13 @@ const homeSchema = [
       const label = document.querySelector("[data-home-video-fullscreen-label]");
       if (!frame || !button || !label) return;
 
+      const fullscreenLabel = {JSON.stringify(homeCopy.videoFullscreen)};
+      const exitFullscreenLabel = {JSON.stringify(homeCopy.videoExitFullscreen)};
       const syncButton = () => {
         const isFullscreen = document.fullscreenElement === frame;
         button.setAttribute("aria-pressed", String(isFullscreen));
         button.classList.toggle("is-active", isFullscreen);
-        label.textContent = isFullscreen ? "Exit" : "Full";
+        label.textContent = isFullscreen ? exitFullscreenLabel : fullscreenLabel;
       };
 
       button.addEventListener("click", async () => {

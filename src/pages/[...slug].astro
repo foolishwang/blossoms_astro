@@ -3,6 +3,13 @@ import routes from "../data/routes.json";
 import global from "../data/global.json";
 import SiteLayout from "../layouts/SiteLayout.astro";
 import {
+  DEFAULT_LOCALE,
+  UI_STRINGS,
+  localizeInternalLinksHtml,
+  localizePath,
+  type Locale,
+} from "../lib/i18n";
+import {
   localizeBlossomsAssetHtml,
   normalizeInternalHrefHtml,
   toRelativeSiteUrl,
@@ -31,7 +38,16 @@ export function getStaticPaths() {
     });
 }
 
-const safeEntry = Astro.props.entry;
+const {
+  entry: safeEntry,
+  locale = DEFAULT_LOCALE,
+  localizedPath = Astro.props.entry?.link || Astro.props.entry?.route || "/",
+} = Astro.props as {
+  entry: (typeof routes)[number];
+  locale?: Locale;
+  localizedPath?: string;
+};
+const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
 
 const title = safeEntry.title;
 const description = safeEntry.excerptText || global.siteTitle;
@@ -259,7 +275,7 @@ function cleanLocationText(value = "") {
 }
 
 const normalizedContent = absolutizeBlossomsAssets(
-  normalizeInternalHrefHtml(safeEntry.content),
+  localizeInternalLinksHtml(normalizeInternalHrefHtml(safeEntry.content), locale),
 );
 const isAboutPage = safeEntry.route === "/about-us/";
 const aboutImages = isAboutPage
@@ -354,8 +370,9 @@ const aboutPrinciples = isAboutPage
   : [];
 const aboutBodyHtml = isAboutPage
   ? absolutizeBlossomsAssets(
-      normalizeInternalHrefHtml(
-        extractSemanticBlocks(safeEntry.content || "", 18),
+      localizeInternalLinksHtml(
+        normalizeInternalHrefHtml(extractSemanticBlocks(safeEntry.content || "", 18)),
+        locale,
       ),
     )
   : "";
@@ -484,8 +501,9 @@ const safetyResourceCards = isDatingSafetyPage
   : [];
 const safetyBodyHtml = isDatingSafetyPage
   ? absolutizeBlossomsAssets(
-      normalizeInternalHrefHtml(
-        extractSemanticBlocks(safeEntry.content || "", 18),
+      localizeInternalLinksHtml(
+        normalizeInternalHrefHtml(extractSemanticBlocks(safeEntry.content || "", 18)),
+        locale,
       ),
     )
   : "";
@@ -586,27 +604,27 @@ const pageImage =
   safetyHeroImage ||
   locationHeroImage ||
   extractFirstImage(safeEntry.content || "");
+const homeUrl = localizePath("/", locale);
+const pageUrl = localizedPath;
 const metaTitle = (() => {
-  if (isAboutPage)
-    return "About Cherry Blossoms Dating | Asian Dating Since 1974";
-  if (isFaqPage) return "Asian Dating FAQs | Cherry Blossoms Help Center";
-  if (isDatingSafetyPage) return "Asian Dating Safety Tips | Cherry Blossoms";
-  if (isLocationDatingPage)
-    return `${locationName} Filipina Dating Site for Serious Relationships | Cherry Blossoms`;
+  if (isAboutPage) return ui.seo.aboutTitle;
+  if (isFaqPage) return ui.seo.faqTitle;
+  if (isDatingSafetyPage) return ui.seo.safetyTitle;
+  if (isLocationDatingPage) return ui.seo.locationTitle(locationName);
   return safeEntry.seo?.title || title;
 })();
 const metaDescription = (() => {
   if (isAboutPage) {
-    return "Learn about Cherry Blossoms Dating, an international Asian dating site and Filipina dating brand serving serious relationships since 1974 with a focus on trust, safety, and long-term connection.";
+    return ui.seo.aboutDescription;
   }
   if (isFaqPage) {
-    return "Find answers about Cherry Blossoms, Asian dating memberships, profiles, messaging, billing, safety, and technical support in one organized FAQ guide.";
+    return ui.seo.faqDescription;
   }
   if (isDatingSafetyPage) {
-    return "Read Cherry Blossoms dating safety tips for Asian dating, including scam prevention, privacy protection, reporting suspicious behavior, and support resources.";
+    return ui.seo.safetyDescription;
   }
   if (isLocationDatingPage) {
-    return `Meet Filipina singles in ${locationName} on Cherry Blossoms, a long-running Asian dating platform built for serious relationships, verified profiles, and safer international dating.`;
+    return ui.seo.locationDescription(locationName);
   }
   return (
     safeEntry.seo?.description || safeEntry.excerptText || global.siteTitle
@@ -614,9 +632,9 @@ const metaDescription = (() => {
 })();
 const pageSchema = (() => {
   const breadcrumbs = [
-    { name: "Home", url: "/" },
+    { name: ui.nav.home, url: homeUrl },
     ...(safeEntry.route !== "/"
-      ? [{ name: stripTags(safeEntry.title || metaTitle), url: safeEntry.route }]
+      ? [{ name: stripTags(safeEntry.title || metaTitle), url: pageUrl }]
       : []),
   ];
 
@@ -625,7 +643,7 @@ const pageSchema = (() => {
       buildWebPageSchema({
         title: metaTitle,
         description: metaDescription,
-        url: safeEntry.route,
+        url: pageUrl,
         type: "AboutPage",
         image: aboutImages[0],
       }),
@@ -663,7 +681,7 @@ const pageSchema = (() => {
       buildWebPageSchema({
         title: metaTitle,
         description: metaDescription,
-        url: safeEntry.route,
+        url: pageUrl,
         type: "FAQPage",
         image: faqHeroImage,
       }),
@@ -682,7 +700,7 @@ const pageSchema = (() => {
       buildCollectionPageSchema({
         title: metaTitle,
         description: metaDescription,
-        url: safeEntry.route,
+        url: pageUrl,
         image: safetyHeroImage,
       }),
       buildBreadcrumbSchema(breadcrumbs),
@@ -694,7 +712,7 @@ const pageSchema = (() => {
       buildCollectionPageSchema({
         title: metaTitle,
         description: metaDescription,
-        url: safeEntry.route,
+        url: pageUrl,
         image: locationHeroImage,
       }),
       buildFaqSchema(locationFaqItems),
@@ -706,7 +724,7 @@ const pageSchema = (() => {
     buildWebPageSchema({
       title: metaTitle,
       description: metaDescription,
-      url: safeEntry.route,
+      url: pageUrl,
       image: pageImage,
     }),
     ...(safeEntry.route !== "/" ? [buildBreadcrumbSchema(breadcrumbs)] : []),
@@ -717,7 +735,7 @@ const resolvedSeo = {
   title: metaTitle,
   description: metaDescription,
   keywords: isAboutPage
-    ? "about Cherry Blossoms, Cherry Blossoms Dating, Asian dating site, international dating, Filipina dating, serious relationships, dating brand since 1974"
+    ? ui.seo.aboutKeywords
     : safeEntry.seo?.keywords,
   ogTitle: metaTitle,
   ogDescription: metaDescription,
@@ -732,9 +750,11 @@ const resolvedSeo = {
 <SiteLayout
   title={metaTitle}
   description={metaDescription}
-  canonical={toRelativeSiteUrl(safeEntry.link)}
+  canonical={toRelativeSiteUrl(pageUrl)}
   bodyClass={global.bodyClass}
   global={global}
+  locale={locale}
+  localizedPath={pageUrl}
   seo={resolvedSeo}
 >
   {

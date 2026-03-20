@@ -1,5 +1,14 @@
 ---
+import {
+  DEFAULT_LOCALE,
+  UI_STRINGS,
+  localizePath,
+  type Locale,
+} from "../../lib/i18n";
+
 const currentYear = new Date().getFullYear();
+const { locale = DEFAULT_LOCALE } = Astro.props as { locale?: Locale };
+const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
 ---
 
 <footer class="cb-shell-footer" role="contentinfo">
@@ -8,8 +17,7 @@ const currentYear = new Date().getFullYear();
     <div class="cb-shell-footer__brand">
       <img src="/assets/images/www-blossoms-com-logo.png" alt="Cherry Blossoms Dating logo" />
       <p>
-        Long-term relationship focused dating since 1974. Built around trust,
-        culture, and genuine connection.
+        {ui.footer.blurb}
       </p>
       <div class="cb-shell-socials" aria-label="Social links">
         <a
@@ -34,23 +42,23 @@ const currentYear = new Date().getFullYear();
       </div>
     </div>
     <div class="cb-shell-footer__group">
-      <h2>Explore</h2>
-      <a href="/">Home</a>
-      <a href="/blog/">Blog</a>
-      <a href="/#locations">Locations</a>
-      <a href="https://members.blossoms.com/register.php">Join Blossoms</a>
+      <h2>{ui.footer.explore}</h2>
+      <a href={localizePath("/", locale)}>{ui.nav.home}</a>
+      <a href="/blog/">{ui.nav.blog}</a>
+      <a href={localizePath("/#locations", locale)}>{ui.nav.locations}</a>
+      <a href="https://members.blossoms.com/register.php">{ui.footer.joinBlossoms}</a>
     </div>
     <div class="cb-shell-footer__group">
-      <h2>About</h2>
-      <a href="/about-us/">About Us</a>
-      <a href="/dating-safety/">Dating Safety</a>
-      <a href="/frequently-asked-questions/">FAQs</a>
-      <a href="/contact-us/">Contact Us</a>
+      <h2>{ui.footer.about}</h2>
+      <a href={localizePath("/about-us/", locale)}>{ui.nav.about}</a>
+      <a href={localizePath("/dating-safety/", locale)}>{ui.nav.datingSafety}</a>
+      <a href={localizePath("/frequently-asked-questions/", locale)}>{ui.nav.faqs}</a>
+      <a href={localizePath("/contact-us/", locale)}>{ui.footer.contactUs}</a>
     </div>
     <div class="cb-shell-footer__group">
-      <h2>Legal</h2>
-      <a href="/terms-of-use/" rel="nofollow">Terms of Use</a>
-      <a href="/privacy-policy/" rel="nofollow">Privacy Policy</a>
+      <h2>{ui.footer.legal}</h2>
+      <a href={localizePath("/terms-of-use/", locale)} rel="nofollow">{ui.footer.terms}</a>
+      <a href={localizePath("/privacy-policy/", locale)} rel="nofollow">{ui.footer.privacy}</a>
       <p class="cb-shell-footer__meta">
         © {currentYear} Cherry Blossoms Dating®
       </p>

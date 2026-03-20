@@ -1,4 +1,5 @@
 import routes from "../data/routes.json";
+import { DEFAULT_LOCALE, LOCALES, localizePath } from "../lib/i18n";
 import { listBlogPosts } from "../lib/posts";
 import { toAbsoluteSiteUrl } from "../lib/url-utils";
 
@@ -28,6 +29,14 @@ export async function GET() {
       url: route.canonical || route.link || route.route,
       lastmod: route.modified || route.date,
     })),
+    ...LOCALES.filter((locale) => locale !== DEFAULT_LOCALE).flatMap((locale) =>
+      staticPages
+        .filter((route) => route.route !== "/blog/")
+        .map((route) => ({
+          url: localizePath(route.canonical || route.link || route.route, locale),
+          lastmod: route.modified || route.date,
+        })),
+    ),
     ...blogPosts.map((post) => ({
       url: post.route,
       lastmod: post.updatedAt || post.publishedAt,
