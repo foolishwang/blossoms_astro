@@ -199,11 +199,11 @@ const homeSchema = [
       <div class="shell hero__grid">
         <div class="hero__copy">
           <p class="eyebrow">Asian Dating Since 1974</p>
-          <h1>Start your journey toward a meaningful relationship.</h1>
+          <h1>Start your journey to <br />something meaningful.</h1>
           <p class="lede">
-            Cherry Blossoms is an Asian dating brand for people looking for
-            serious connections, cultural openness, and a more intentional path
-            to international relationships.
+            Cherry Blossoms is an Asian dating brand for serious connections,
+            cultural openness, and a more intentional path to international
+            relationships.
           </p>
           <ul class="hero__checks">
             <li>Established since 1974</li>
@@ -245,6 +245,22 @@ const homeSchema = [
       </div>
     </section>
 
+    <section class="shell hero-mobile-copy" aria-label="Hero introduction">
+      <div class="hero-mobile-copy__inner">
+        <p class="eyebrow">Asian Dating Since 1974</p>
+        <h1>Start your journey to something meaningful.</h1>
+        <p class="lede">
+          Cherry Blossoms is an Asian dating brand for serious connections,
+          cultural openness, and a more intentional path to international
+          relationships.
+        </p>
+        <ul class="hero__checks">
+          <li>Established since 1974</li>
+          <li>Real members worldwide</li>
+        </ul>
+      </div>
+    </section>
+
     <section class="featured shell">
       <p class="section-kicker">Featured In</p>
       <h2>Cherry Blossoms and Asian dating coverage from major publications</h2>
@@ -266,38 +282,25 @@ const homeSchema = [
 
     <section class="shell split--media">
       <div class="video-hero">
-        <video
-          class="video-hero__media"
-          src={toLocalBlossomsAssetUrl(
-            "https://www.blossoms.com/wp-content/uploads/2025/06/AboutUsBlossomsDatin-1.mp4",
-          )}
-          poster={toLocalBlossomsAssetUrl(
-            "https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg",
-          )}
-          autoplay
-          muted
-          loop
-          playsinline></video>
-        <div class="video-hero__overlay">
-          <div class="stack video-hero__content">
-            <p class="section-kicker">Why Blossoms</p>
-            <h2>An Asian Dating Site Like No Other</h2>
-            <p class="video-hero__lede">
-              A long-standing platform built for people looking for real
-              commitment, cultural connection, and a safer way to meet.
-            </p>
-            <div class="trust-list">
-              {
-                trustPoints.map((point) => (
-                  <article class="trust-item">
-                    <span class="trust-item__icon">♥</span>
-                    <p>{point}</p>
-                  </article>
-                ))
-              }
-            </div>
-          </div>
+        <div class="video-hero__frame">
+          <iframe
+            id="home-stream-player"
+            class="video-hero__media"
+            src="https://customer-8t8x7431waj10zps.cloudflarestream.com/1a390dc7e554d93a2a8e344523321eda/iframe?autoplay=true&muted=true&loop=true&controls=false&letterboxColor=transparent&poster=https%3A%2F%2Fcustomer-8t8x7431waj10zps.cloudflarestream.com%2F1a390dc7e554d93a2a8e344523321eda%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600"
+            title="Cherry Blossoms introduction video"
+            loading="lazy"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+            allowfullscreen></iframe>
         </div>
+        <button
+          class="video-hero__sound-toggle"
+          type="button"
+          data-home-video-toggle
+          aria-pressed="false"
+        >
+          <span class="video-hero__sound-icon" aria-hidden="true">♪</span>
+          <span data-home-video-toggle-label>Sound</span>
+        </button>
       </div>
     </section>
 
@@ -621,6 +624,9 @@ const homeSchema = [
     </section>
   </div>
 
+  <script is:inline src="https://embed.cloudflarestream.com/embed/sdk.latest.js"
+  ></script>
+
   <script is:inline>
     (() => {
       const root = document.querySelector("[data-pillars]");
@@ -657,6 +663,58 @@ const homeSchema = [
           tabs[nextIndex]?.focus();
         });
       });
+    })();
+
+    (() => {
+      const iframe = document.getElementById("home-stream-player");
+      const button = document.querySelector("[data-home-video-toggle]");
+      const label = document.querySelector("[data-home-video-toggle-label]");
+      if (!iframe || !button || !label) return;
+
+      let player = null;
+      let isMuted = true;
+
+      const syncButton = () => {
+        button.setAttribute("aria-pressed", String(!isMuted));
+        button.classList.toggle("is-active", !isMuted);
+        label.textContent = isMuted ? "Sound" : "Mute";
+      };
+
+      const setupPlayer = () => {
+        if (typeof window.Stream !== "function") return false;
+        player = window.Stream(iframe);
+        player.muted = true;
+        player.loop = true;
+        syncButton();
+
+        button.addEventListener("click", async () => {
+          if (!player) return;
+          try {
+            isMuted = !isMuted;
+            player.muted = isMuted;
+            if (!isMuted) {
+              player.volume = 1;
+              await player.play();
+            }
+            syncButton();
+          } catch (_error) {
+            isMuted = true;
+            player.muted = true;
+            syncButton();
+          }
+        });
+
+        return true;
+      };
+
+      if (setupPlayer()) return;
+
+      const waitForSdk = window.setInterval(() => {
+        if (!setupPlayer()) return;
+        window.clearInterval(waitForSdk);
+      }, 150);
+
+      window.setTimeout(() => window.clearInterval(waitForSdk), 5000);
     })();
   </script>
 
@@ -701,7 +759,11 @@ const homeSchema = [
     .eyebrow {
       margin: 0;
       color: var(--accent-deep);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        sans-serif;
       font-size: 0.78rem;
       font-weight: 600;
       letter-spacing: 0.18em;
@@ -712,7 +774,7 @@ const homeSchema = [
     }
 
     .section-kicker::before {
-      content: '';
+      content: "";
       display: inline-block;
       width: 1.6rem;
       height: 2px;
@@ -762,7 +824,7 @@ const homeSchema = [
 
     .hero h1 {
       margin: 0;
-      font-size: clamp(2.2rem, 4.8vw, 4.8rem);
+      font-size: clamp(1.32rem, 2.88vw, 2.88rem);
       line-height: 0.96;
       letter-spacing: -0.04em;
       color: white;
@@ -796,14 +858,14 @@ const homeSchema = [
     .hero__panel {
       justify-self: end;
       width: min(31rem, 100%);
-      padding: 1.2rem;
+      padding: 1.8rem;
       border: 1px solid rgba(255, 255, 255, 0.24);
       border-radius: 1.75rem;
       background: rgba(255, 250, 247, 0.18);
       backdrop-filter: blur(18px);
       box-shadow: 0 2rem 5rem rgba(20, 10, 14, 0.28);
       display: grid;
-      gap: 1rem;
+      gap: 1.5rem;
     }
 
     .hero__badge {
@@ -878,6 +940,10 @@ const homeSchema = [
       border: 1px solid rgba(255, 255, 255, 0.18);
     }
 
+    .hero-mobile-copy {
+      display: none;
+    }
+
     .featured,
     .split,
     .pillars,
@@ -895,6 +961,7 @@ const homeSchema = [
     .home-redesign summary,
     .home-redesign img,
     .home-redesign video,
+    .home-redesign iframe,
     .home-redesign h1,
     .home-redesign h2,
     .home-redesign h3,
@@ -976,7 +1043,11 @@ const homeSchema = [
     .locations h2,
     .about h2 {
       margin: 0.5rem 0 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+      font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        sans-serif !important;
       font-size: clamp(1.65rem, 2.6vw, 2.5rem);
       font-weight: 700;
       line-height: 1.22;
@@ -1005,8 +1076,8 @@ const homeSchema = [
       width: 100%;
       max-height: 4rem;
       object-fit: contain;
-      filter: grayscale(1);
-      opacity: 0.75;
+      filter: none;
+      opacity: 1;
       transition:
         filter 180ms ease,
         opacity 180ms ease,
@@ -1014,7 +1085,7 @@ const homeSchema = [
     }
 
     .featured__logo:hover img {
-      filter: grayscale(0);
+      filter: none;
       opacity: 1;
       transform: translateY(-2px);
     }
@@ -1034,52 +1105,88 @@ const homeSchema = [
     }
 
     .split--media {
-      width: min(1320px, calc(100% - 1rem));
+      width: min(1100px, calc(100% - 2rem));
       padding: 5.5rem 0;
     }
 
     .video-hero {
       position: relative;
-      min-height: 36rem;
+      aspect-ratio: 16 / 9;
       border-radius: 2rem;
+      padding: 0.6rem;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(125, 58, 66, 0.1);
+      box-shadow: 0 1.4rem 3rem rgba(137, 66, 77, 0.12);
+    }
+
+    .video-hero__frame {
+      position: absolute;
+      inset: 0.6rem;
       overflow: clip;
-      border: 1px solid var(--line);
-      box-shadow: 0 2rem 4rem rgba(137, 66, 77, 0.16);
-      background: #160c11;
+      border-radius: 1.45rem;
+      background: #fff4ef;
     }
 
     .video-hero__media {
       position: absolute;
-      inset: 0;
+      top: 0;
+      left: 50%;
       display: block;
-      width: 100%;
+      width: calc(100% + 14rem + 50px);
       height: 100%;
-      object-fit: cover;
+      max-width: none;
+      border: 0;
+      transform: translateX(-50%) scale(1.06);
+      transform-origin: center center;
     }
 
-    .video-hero__overlay {
-      position: relative;
+    .video-hero__sound-toggle {
+      position: absolute;
+      top: 1.1rem;
+      right: 1.1rem;
       z-index: 1;
-      min-height: 36rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: clamp(1.5rem, 3vw, 3rem);
-      background:
-        linear-gradient(
-          90deg,
-          rgba(20, 10, 14, 0.74) 0%,
-          rgba(20, 10, 14, 0.42) 34%,
-          rgba(20, 10, 14, 0.12) 66%,
-          rgba(20, 10, 14, 0.32) 100%
-        ),
-        linear-gradient(
-          180deg,
-          rgba(20, 10, 14, 0.08) 0%,
-          rgba(20, 10, 14, 0.18) 38%,
-          rgba(20, 10, 14, 0.62) 100%
-        );
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.68rem;
+      border: 1px solid rgba(255, 255, 255, 0.62);
+      border-radius: 999px;
+      background: rgba(255, 252, 250, 0.92);
+      color: #6d2030;
+      box-shadow: 0 0.7rem 1.4rem rgba(59, 23, 31, 0.12);
+      backdrop-filter: blur(10px);
+      font:
+        700 0.68rem/1 Arial,
+        Helvetica,
+        sans-serif;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition:
+        transform 180ms ease,
+        background 180ms ease,
+        color 180ms ease,
+        border-color 180ms ease;
+    }
+
+    .video-hero__sound-toggle:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .video-hero__sound-toggle.is-active {
+      color: #ffffff;
+      background: rgba(164, 42, 52, 0.88);
+      border-color: rgba(164, 42, 52, 0.9);
+    }
+
+    .video-hero__sound-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1rem;
+      height: 1rem;
+      font-size: 0.82rem;
     }
 
     .video-hero__content {
@@ -1094,7 +1201,11 @@ const homeSchema = [
 
     .video-hero h2 {
       color: #fff !important;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+      font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        sans-serif !important;
       font-size: clamp(1.65rem, 2.6vw, 2.5rem);
       font-weight: 700;
       line-height: 1.22;
@@ -1324,7 +1435,11 @@ const homeSchema = [
 
     .overview-card__copy h2 {
       margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+      font-family:
+        "Inter",
+        system-ui,
+        -apple-system,
+        sans-serif !important;
       font-size: clamp(1.85rem, 3.2vw, 2.85rem);
       font-weight: 700;
       line-height: 1.2;
@@ -1952,18 +2067,8 @@ const homeSchema = [
         grid-template-columns: 1fr;
       }
 
-      .video-hero,
-      .video-hero__overlay {
-        min-height: 30rem;
-      }
-
-      .video-hero__overlay {
-        gap: 1.5rem;
-      }
-
-      .video-hero__caption {
-        align-self: stretch;
-        max-width: none;
+      .video-hero {
+        aspect-ratio: 16 / 9;
       }
 
       .hero__grid {
@@ -2006,9 +2111,19 @@ const homeSchema = [
       }
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 767px) {
       .hero {
         min-height: auto;
+        align-items: flex-start;
+        overflow: visible;
+        background:
+          linear-gradient(
+            180deg,
+            rgba(22, 12, 17, 0.68) 0%,
+            rgba(22, 12, 17, 0.28) 100%
+          ),
+          url("/assets/wp/wp-content/uploads/2025/07/medium-shot-smiley-woman-outdoors.jpg-768x1152.webp")
+            center top / cover no-repeat;
       }
 
       .hero__backdrop {
@@ -2018,7 +2133,7 @@ const homeSchema = [
             rgba(22, 12, 17, 0.68) 0%,
             rgba(22, 12, 17, 0.28) 100%
           ),
-          url("//www.blossoms.com/wp-content/uploads/2025/07/medium-shot-smiley-woman-outdoors.jpg-768x1152.webp")
+          url("/assets/wp/wp-content/uploads/2025/07/medium-shot-smiley-woman-outdoors.jpg-768x1152.webp")
             center top / cover no-repeat;
       }
 
@@ -2043,30 +2158,126 @@ const homeSchema = [
       }
 
       .split--media {
-        width: min(100%, calc(100% - 1rem));
+        width: min(100%, calc(100% - 1.2rem));
         padding-top: 3.5rem;
         padding-bottom: 3.5rem;
       }
 
       .hero__grid {
         gap: 1.25rem;
+        padding-top: 2.75rem;
+        padding-bottom: 2rem;
       }
 
-      .video-hero,
-      .video-hero__overlay {
-        min-height: 26rem;
+      .hero__copy {
+        display: none;
       }
 
-      .video-hero__content {
-        max-width: none;
+      .hero__panel {
+        justify-self: center;
+        width: min(90vw, 24rem);
+        margin-top: calc(6rem + 100px);
+        padding: 1rem 0.9rem 1.05rem;
+        gap: 0.9rem;
+        border-radius: 1.4rem;
+        border-color: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 249, 245, 0.12);
+        box-shadow: 0 1.25rem 2.5rem rgba(20, 10, 14, 0.18);
       }
 
-      .video-hero h2 {
-        max-width: none;
+      .hero__badge {
+        padding: 0.45rem 0.82rem;
+        font-size: 0.9rem;
       }
 
-      .video-hero__lede {
-        font-size: 0.96rem;
+      .cta {
+        padding: 1rem 0.9rem;
+        border-radius: 1.1rem;
+      }
+
+      .cta span {
+        font-size: 1rem;
+      }
+
+      .cta small {
+        font-size: 0.72rem;
+        line-height: 1.35;
+      }
+
+      .hero__login {
+        margin-top: 0;
+        font-size: 0.92rem;
+      }
+
+      .hero__microproof {
+        gap: 0.4rem;
+        max-width: 14rem;
+        margin: 0 auto;
+      }
+
+      .hero__microproof span:nth-child(3) {
+        display: none;
+      }
+
+      .hero__microproof span {
+        padding: 0.34rem 0.56rem;
+        font-size: 0.7rem;
+      }
+
+      .hero-mobile-copy {
+        display: block;
+        padding-top: 1.1rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .hero-mobile-copy__inner {
+        width: min(90vw, 24rem);
+        margin: 0 auto;
+        display: grid;
+        gap: 0.9rem;
+        color: var(--ink);
+      }
+
+      .hero-mobile-copy h1 {
+        margin: 0;
+        max-width: 15rem;
+        font-size: clamp(1.32rem, 2.88vw, 2.88rem);
+        line-height: 0.98;
+        color: var(--ink);
+      }
+
+      .hero-mobile-copy .lede {
+        max-width: 21rem;
+        color: rgba(57, 35, 41, 0.82);
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+
+      .hero-mobile-copy .hero__checks {
+        gap: 0.55rem;
+        font-size: 0.92rem;
+        color: rgba(57, 35, 41, 0.92);
+      }
+
+      .hero-mobile-copy .hero__checks li::before {
+        color: #d48d2a;
+      }
+
+      .video-hero {
+        aspect-ratio: 4 / 3;
+      }
+
+      .video-hero__media {
+        width: calc(100% + 9rem + 24px);
+        transform: translateX(-50%) scale(1.04);
+      }
+
+      .video-hero__sound-toggle {
+        top: 0.95rem;
+        right: 0.95rem;
+        padding: 0.46rem 0.62rem;
+        gap: 0.35rem;
+        font-size: 0.64rem;
       }
 
       .home-redesign .stories {
