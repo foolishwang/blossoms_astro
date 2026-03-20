@@ -1513,6 +1513,8 @@ const homeSchema = [
       width: min(1520px, calc(100% - 2rem));
       margin: 0 auto;
       padding: 5.5rem 0;
+      box-sizing: border-box;
+      overflow-x: clip;
     }
 
     .overview-card {
@@ -1524,6 +1526,8 @@ const homeSchema = [
       padding: clamp(2.5rem, 5vw, 4.5rem);
       align-items: center;
       position: relative;
+      box-sizing: border-box;
+      overflow-x: clip;
     }
 
     .overview-card__copy {
@@ -1605,6 +1609,8 @@ const homeSchema = [
     }
 
     .image-card--overview img {
+      display: block;
+      width: 100%;
       aspect-ratio: 4 / 4.6;
       height: auto;
       min-height: 0;
