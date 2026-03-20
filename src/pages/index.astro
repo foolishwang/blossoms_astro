@@ -2120,6 +2120,7 @@ const homeSchema = [
     @media (max-width: 767px) {
       .hero .shell {
         width: 100%;
+        max-width: 100%;
         margin: 0;
       }
 
@@ -2127,6 +2128,7 @@ const homeSchema = [
         min-height: auto;
         align-items: flex-start;
         overflow: visible;
+        overflow-x: clip;
         background:
           linear-gradient(
             180deg,
@@ -2176,10 +2178,12 @@ const homeSchema = [
 
       .hero__grid {
         width: 100%;
+        max-width: 100%;
         gap: 1.25rem;
         padding-top: 2.75rem;
         padding-bottom: 2rem;
         justify-items: center;
+        overflow-x: clip;
       }
 
       .hero__copy {
@@ -2188,7 +2192,8 @@ const homeSchema = [
 
       .hero__panel {
         justify-self: center;
-        width: min(90vw, 24rem);
+        width: min(22.75rem, calc(100vw - 1.5rem));
+        max-width: calc(100vw - 1.5rem);
         margin-left: auto;
         margin-right: auto;
         margin-top: calc(6rem + 100px);
@@ -2207,6 +2212,7 @@ const homeSchema = [
       }
 
       .cta {
+        width: 100%;
         padding: 1rem 0.9rem;
         border-radius: 1.1rem;
       }
@@ -2229,6 +2235,7 @@ const homeSchema = [
         gap: 0.4rem;
         max-width: 14rem;
         margin: 0 auto;
+        justify-content: center;
       }
 
       .hero__microproof span:nth-child(3) {

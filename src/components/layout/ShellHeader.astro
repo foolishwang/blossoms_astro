@@ -294,8 +294,13 @@ function isActivePath(href = "") {
   }
 
   @media (max-width: 640px) {
+    .cb-shell-header {
+      overflow-x: clip;
+    }
+
     .cb-shell-header__inner {
-      width: min(100%, calc(100% - 1rem));
+      width: calc(100% - 1rem);
+      max-width: 100%;
       min-height: 2.4rem;
       padding: 0.4rem 0;
       gap: 0.75rem;
@@ -311,7 +316,7 @@ function isActivePath(href = "") {
       width: 1.35rem;
       height: 0.95rem;
       position: relative;
-      left: -10px;
+      left: -6px;
     }
   }
 

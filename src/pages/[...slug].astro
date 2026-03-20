@@ -242,6 +242,22 @@ function splitLabelledListItem(item = "") {
   };
 }
 
+function isNoisyLocationText(value = "") {
+  const normalized = decodeHtml(value).replace(/\s+/g, " ").trim();
+  if (!normalized) return true;
+
+  return /#1 online dating site|as featured in|mentioned in|seen in|86%|5m|34k\+|user engagement|perfect match|love online|show more|show less/i.test(
+    normalized,
+  );
+}
+
+function cleanLocationText(value = "") {
+  return decodeHtml(value)
+    .replace(/\s+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .trim();
+}
+
 const normalizedContent = absolutizeBlossomsAssets(
   normalizeInternalHrefHtml(safeEntry.content),
 );
@@ -481,20 +497,89 @@ const locationHeroImage = isLocationDatingPage
   ? extractBackgroundImage(safeEntry.content || "") ||
     extractFirstImage(safeEntry.content || "")
   : "";
-const locationParagraphs = isLocationDatingPage
-  ? extractParagraphs(safeEntry.content || "")
-  : [];
-const locationListItems = isLocationDatingPage
-  ? [...new Set(extractListItems(safeEntry.content || ""))].slice(0, 6)
-  : [];
 const locationStatCards = isLocationDatingPage
-  ? extractStatCards(safeEntry.content || "")
+  ? [
+      {
+        value: "Since 1974",
+        label: "Long-running trust",
+        detail:
+          "Cherry Blossoms has focused on international dating for decades, which gives new members a more established starting point.",
+      },
+      {
+        value: "Worldwide",
+        label: "Real member reach",
+        detail:
+          `People exploring ${locationName} can connect through a platform designed for cross-border relationships, not casual local swiping.`,
+      },
+      {
+        value: "Serious",
+        label: "Clearer intent",
+        detail:
+          "The experience is structured for people looking for commitment, cultural openness, and safer first conversations.",
+      },
+    ]
   : [];
-const locationBodyHtml = isLocationDatingPage
-  ? absolutizeBlossomsAssets(
-      normalizeInternalHrefHtml(extractSemanticBlocks(safeEntry.content || "")),
-    )
+const locationHeroTitle = isLocationDatingPage
+  ? `Meet Filipina singles in ${locationName} with more trust and less noise.`
+  : title;
+const locationHeroLede = isLocationDatingPage
+  ? `Cherry Blossoms gives people exploring ${locationName} Filipina dating a more deliberate starting point: verified profiles, clearer intent, and a platform built for serious international relationships rather than casual churn.`
   : "";
+const locationStoryParagraphs = isLocationDatingPage
+  ? [
+      `${locationName} works best for members who want steady communication, cultural openness, and a more intentional path to long-term dating.`,
+      `Instead of treating attention as the product, Blossoms is structured around profile browsing, messaging, and safer early-stage trust building.`,
+      `That makes this page less about hype and more about helping people in ${locationName} start conversations that can actually go somewhere.`,
+    ]
+  : [];
+const locationHighlights = isLocationDatingPage
+  ? [
+      `Verified profiles for people exploring dating in ${locationName}.`,
+      `A better fit for members seeking serious relationships, not casual swiping.`,
+      `Profile browsing and messaging designed around trust and consistency.`,
+      `A long-running international dating platform with experience since 1974.`,
+    ]
+  : [];
+const locationGuideCards = isLocationDatingPage
+  ? [
+      {
+        title: `Why ${locationName} matters`,
+        body: `${locationName} gives searchers a local entry point, but the value proposition stays the same: real profiles, clearer expectations, and a better environment for meaningful conversations.`,
+      },
+      {
+        title: "How to approach the page",
+        body: `Use this page to narrow your focus, read profile details carefully, and start with respectful messages that make it clear you are looking for something serious rather than casual attention.`,
+      },
+      {
+        title: "What makes Blossoms different",
+        body: `The brand advantage is continuity. Blossoms has operated for decades, which changes the tone of the platform: more trust signals, more moderation, and less disposable behavior.`,
+      },
+    ]
+  : [];
+const locationBodyParagraphs = isLocationDatingPage
+  ? [
+      `For people searching ${locationName} Filipina dating, the strongest differentiator is not novelty. It is the combination of verified profiles, clearer intent, and a platform that has been operating long enough to make trust part of the product.`,
+      `That matters because most dating pages are optimized for volume and distraction. Blossoms works better when the goal is to start a serious conversation, learn whether values align, and build from a more stable first interaction.`,
+      `A better first move is usually simple: complete your profile properly, browse with patience, and start messages that show respect, specificity, and real relationship intent.`,
+      `If you are evaluating dating options in ${locationName}, use the page as a focused entry point into a broader platform built for long-term connections rather than quick, disposable matches.`,
+    ]
+  : [];
+const locationFaqItems = isLocationDatingPage
+  ? [
+      {
+        question: `Is Cherry Blossoms a good way to meet Filipina singles in ${locationName}?`,
+        answer: `Yes. The page is designed to help people interested in ${locationName} Filipina dating start with verified profiles, clearer intent, and a platform built around long-term relationships instead of casual swiping.`,
+      },
+      {
+        question: `What makes dating in ${locationName} on Blossoms different from casual dating apps?`,
+        answer: `Blossoms is positioned for people looking for something serious. That means profile quality, safety expectations, and communication tools matter more than speed, novelty, or endless browsing.`,
+      },
+      {
+        question: `What should new members do first on a ${locationName} dating page?`,
+        answer: `Start by building a complete profile, browse members carefully, keep early conversations on-platform, and approach messages with clear intent and patience. That usually creates better outcomes than generic outreach.`,
+      },
+    ]
+  : [];
 const pageImage =
   aboutImages[0] ||
   faqHeroImage ||
@@ -507,7 +592,7 @@ const metaTitle = (() => {
   if (isFaqPage) return "Asian Dating FAQs | Cherry Blossoms Help Center";
   if (isDatingSafetyPage) return "Asian Dating Safety Tips | Cherry Blossoms";
   if (isLocationDatingPage)
-    return `${locationName} Filipina Dating Site | Cherry Blossoms`;
+    return `${locationName} Filipina Dating Site for Serious Relationships | Cherry Blossoms`;
   return safeEntry.seo?.title || title;
 })();
 const metaDescription = (() => {
@@ -521,7 +606,7 @@ const metaDescription = (() => {
     return "Read Cherry Blossoms dating safety tips for Asian dating, including scam prevention, privacy protection, reporting suspicious behavior, and support resources.";
   }
   if (isLocationDatingPage) {
-    return `Meet Filipina singles in ${locationName} with Cherry Blossoms. Explore ${locationName} Filipina dating, trusted profiles, and long-term relationship opportunities.`;
+    return `Meet Filipina singles in ${locationName} on Cherry Blossoms, a long-running Asian dating platform built for serious relationships, verified profiles, and safer international dating.`;
   }
   return (
     safeEntry.seo?.description || safeEntry.excerptText || global.siteTitle
@@ -587,6 +672,7 @@ const pageSchema = (() => {
         url: safeEntry.route,
         image: locationHeroImage,
       }),
+      buildFaqSchema(locationFaqItems),
       buildBreadcrumbSchema(breadcrumbs),
     ];
   }
@@ -1137,10 +1223,8 @@ const resolvedSeo = {
           >
             <div class="location-hero__copy">
               <p class="location-eyebrow">Filipina Dating Guide</p>
-              <h1>{title}</h1>
-              <p class="location-lede">
-                {locationParagraphs[0] || description}
-              </p>
+              <h1>{locationHeroTitle}</h1>
+              <p class="location-lede">{locationHeroLede}</p>
               <div class="location-actions">
                 <a
                   href="https://members.blossoms.com/register.php"
@@ -1177,10 +1261,7 @@ const resolvedSeo = {
                 Meet Filipina singles in {locationName} through a brand built
                 around trust and long-term intent.
               </h2>
-              {(locationParagraphs.slice(1, 4).length
-                ? locationParagraphs.slice(1, 4)
-                : [description]
-              ).map((paragraph) => (
+              {locationStoryParagraphs.map((paragraph) => (
                 <p>{paragraph}</p>
               ))}
             </article>
@@ -1188,33 +1269,51 @@ const resolvedSeo = {
             <aside class="location-highlights">
               <p class="location-section-kicker">What people value here</p>
               <ul>
-                {(locationListItems.length
-                  ? locationListItems
-                  : [
-                      `Verified profiles for people exploring dating in ${locationName}.`,
-                      "A clearer starting point for long-term relationships, not casual noise.",
-                      "Messaging, matching, and profile browsing designed around trust.",
-                      "A platform with international dating experience since 1974.",
-                    ]
-                ).map((item) => (
+                {locationHighlights.map((item) => (
                   <li>{item}</li>
                 ))}
               </ul>
             </aside>
           </section>
 
-          {locationBodyHtml && (
+          <section class="location-guide">
+            {locationGuideCards.map((card) => (
+              <article class="location-guide__card">
+                <p class="location-section-kicker">{card.title}</p>
+                <p>{card.body}</p>
+              </article>
+            ))}
+          </section>
+
+          {locationBodyParagraphs.length > 0 && (
             <section class="location-body">
               <div class="location-body__inner">
                 <p class="location-section-kicker">
                   More about dating in {locationName}
                 </p>
                 <article class="location-richtext">
-                  <Fragment set:html={locationBodyHtml} />
+                  {locationBodyParagraphs.map((paragraph) => (
+                    <p>{paragraph}</p>
+                  ))}
                 </article>
               </div>
             </section>
           )}
+
+          <section class="location-faq">
+            <div class="location-faq__heading">
+              <p class="location-section-kicker">Questions people ask</p>
+              <h2>{locationName} dating, clarified.</h2>
+            </div>
+            <div class="location-faq__grid">
+              {locationFaqItems.map((item) => (
+                <article class="location-faq__item">
+                  <h3>{item.question}</h3>
+                  <p>{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </section>
 
           <section class="location-cta">
             <div>
@@ -1397,6 +1496,8 @@ const resolvedSeo = {
   .location-stat,
   .location-story,
   .location-highlights,
+  .location-guide__card,
+  .location-faq__item,
   .location-body__inner,
   .location-cta {
     padding: 1.4rem;
@@ -1431,16 +1532,43 @@ const resolvedSeo = {
     gap: 1rem;
   }
 
+  .location-guide,
+  .location-faq__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
   .location-story,
   .location-highlights,
+  .location-guide__card,
+  .location-faq__item,
   .location-body__inner {
     display: grid;
     gap: 0.95rem;
   }
 
   .location-story h2,
-  .location-cta h2 {
+  .location-cta h2,
+  .location-faq h2 {
     font-size: clamp(1.9rem, 3vw, 3rem);
+  }
+
+  .location-faq {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .location-faq__heading {
+    display: grid;
+    gap: 0.95rem;
+  }
+
+  .location-faq__item h3 {
+    margin: 0;
+    color: #24161c;
+    font-size: 1.15rem;
+    line-height: 1.35;
   }
 
   .location-highlights ul {
@@ -3081,6 +3209,8 @@ const resolvedSeo = {
   @media (max-width: 980px) {
     .location-stats,
     .location-overview,
+    .location-guide,
+    .location-faq__grid,
     .about-hero,
     .about-ribbon,
     .about-stats,
