@@ -1,4 +1,4 @@
-import routes from "../data/routes.json";
+import { SITE_ORIGIN } from "../lib/url-utils";
 
 export function GET() {
   const lines = [
@@ -9,7 +9,7 @@ export function GET() {
     "Disallow: /wp-login.php",
     "Disallow: /admin/",
     "Disallow: /api/admin/",
-    "Sitemap: https://www.blossoms.com/sitemap.xml",
+    `Sitemap: ${SITE_ORIGIN}/sitemap.xml`,
   ].filter(Boolean);
 
   return new Response(`${lines.join("\n")}\n`, {

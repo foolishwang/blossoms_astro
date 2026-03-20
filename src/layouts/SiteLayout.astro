@@ -6,7 +6,7 @@ import {
   toAbsoluteSiteUrl,
   toLocalBlossomsAssetUrl,
 } from "../lib/url-utils";
-import { buildSiteSchemas } from "../lib/seo";
+import { buildSiteSchemas, DEFAULT_OG_IMAGE } from "../lib/seo";
 
 const {
   title,
@@ -18,7 +18,13 @@ const {
 } = Astro.props;
 
 const robots = seo.robots || {};
-const robotsContent = [robots.index, robots.follow, robots["max-image-preview"]]
+const robotsContent = [
+  robots.index || "index",
+  robots.follow || "follow",
+  robots["max-image-preview"] || "max-image-preview:large",
+  robots["max-snippet"] || "max-snippet:-1",
+  robots["max-video-preview"] || "max-video-preview:-1",
+]
   .filter(Boolean)
   .join(", ");
 const absoluteCanonical = canonical ? toAbsoluteSiteUrl(canonical) : undefined;
@@ -39,6 +45,8 @@ const resolvedBodyClass = bodyClass || global.bodyClass || fallbackBodyClass;
 const fontFaceStyles = localizeBlossomsAssetHtml(
   (global.inlineStyles || []).find((css) => css.includes("@font-face")) || "",
 );
+const resolvedOgImage = seo.ogImage || DEFAULT_OG_IMAGE;
+const resolvedTwitterImage = seo.twitterImage || resolvedOgImage;
 ---
 
 <!doctype html>
@@ -51,9 +59,10 @@ const fontFaceStyles = localizeBlossomsAssetHtml(
     />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="author" content="Cherry Blossoms Dating" />
     <meta name="generator" content="Astro" />
     <meta name="theme-color" content="#921b31" />
-    <meta name="robots" content={robotsContent || "max-image-preview:large"} />
+    <meta name="robots" content={robotsContent} />
     {absoluteCanonical && <link rel="canonical" href={absoluteCanonical} />}
     <meta property="og:title" content={seo.ogTitle || title} />
     <meta
@@ -62,22 +71,24 @@ const fontFaceStyles = localizeBlossomsAssetHtml(
     />
     <meta property="og:type" content={seo.ogType || "website"} />
     <meta property="og:site_name" content="Cherry Blossoms Dating" />
+    <meta property="og:locale" content="en_US" />
     {
       absoluteCanonical && (
         <meta property="og:url" content={absoluteCanonical} />
       )
     }
-    {seo.ogImage && <meta property="og:image" content={seo.ogImage} />}
+    <meta property="og:image" content={resolvedOgImage} />
     <meta
       name="twitter:card"
       content={seo.twitterCard || "summary_large_image"}
     />
+    <meta name="twitter:site" content="@CherryBlossomsI" />
     <meta name="twitter:title" content={seo.twitterTitle || title} />
     <meta
       name="twitter:description"
       content={seo.twitterDescription || description}
     />
-    {seo.ogImage && <meta name="twitter:image" content={seo.ogImage} />}
+    <meta name="twitter:image" content={resolvedTwitterImage} />
     <link
       rel="icon"
       href={toLocalBlossomsAssetUrl(

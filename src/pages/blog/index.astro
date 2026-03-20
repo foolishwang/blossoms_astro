@@ -8,6 +8,7 @@ import { toRelativeSiteUrl } from "../../lib/url-utils";
 import {
   buildBreadcrumbSchema,
   buildCollectionPageSchema,
+  buildItemListSchema,
 } from "../../lib/seo";
 
 export const prerender = true;
@@ -21,6 +22,14 @@ const schema = [
     title,
     description,
     url: "/blog/",
+  }),
+  buildItemListSchema({
+    name: "Cherry Blossoms Journal posts",
+    url: "/blog/",
+    items: posts.map((post) => ({
+      name: post.title,
+      url: post.href,
+    })),
   }),
   buildBreadcrumbSchema([
     { name: "Home", url: "/" },

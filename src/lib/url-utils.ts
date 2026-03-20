@@ -1,6 +1,6 @@
 import localAssetMap from "../data/local-asset-map.json";
 
-const SITE_ORIGIN = "https://www.blossoms.com";
+export const SITE_ORIGIN = "https://www.blossoms.com";
 const SITE_PROTOCOL_RELATIVE_ORIGIN = "//www.blossoms.com";
 const LOCAL_BLOSSOMS_ASSET_PREFIX = "/assets/wp";
 const BLOSSOMS_ASSET_MAP = localAssetMap as Record<string, string>;

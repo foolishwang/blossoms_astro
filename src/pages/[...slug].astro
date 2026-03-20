@@ -9,6 +9,7 @@ import {
 } from "../lib/url-utils";
 import {
   buildBreadcrumbSchema,
+  buildCollectionPageSchema,
   buildFaqSchema,
   buildWebPageSchema,
 } from "../lib/seo";
@@ -494,75 +495,12 @@ const locationBodyHtml = isLocationDatingPage
       normalizeInternalHrefHtml(extractSemanticBlocks(safeEntry.content || "")),
     )
   : "";
-const pageSchema = (() => {
-  const breadcrumbs = [
-    { name: "Home", url: "/" },
-    ...(safeEntry.route !== "/"
-      ? [{ name: stripTags(safeEntry.title || title), url: safeEntry.route }]
-      : []),
-  ];
-
-  if (isAboutPage) {
-    return [
-      buildWebPageSchema({
-        title,
-        description,
-        url: safeEntry.route,
-        type: "AboutPage",
-      }),
-      buildBreadcrumbSchema(breadcrumbs),
-    ];
-  }
-
-  if (isFaqPage) {
-    return [
-      buildWebPageSchema({
-        title,
-        description,
-        url: safeEntry.route,
-        type: "FAQPage",
-      }),
-      buildFaqSchema(
-        faqItems.slice(0, 20).map((item) => ({
-          question: decodeHtml(item.question),
-          answer: item.answer,
-        })),
-      ),
-      buildBreadcrumbSchema(breadcrumbs),
-    ];
-  }
-
-  if (isDatingSafetyPage) {
-    return [
-      buildWebPageSchema({
-        title,
-        description,
-        url: safeEntry.route,
-      }),
-      buildBreadcrumbSchema(breadcrumbs),
-    ];
-  }
-
-  if (isLocationDatingPage) {
-    return [
-      buildWebPageSchema({
-        title,
-        description,
-        url: safeEntry.route,
-      }),
-      buildBreadcrumbSchema(breadcrumbs),
-    ];
-  }
-
-  return [
-    buildWebPageSchema({
-      title,
-      description,
-      url: safeEntry.route,
-    }),
-    ...(safeEntry.route !== "/" ? [buildBreadcrumbSchema(breadcrumbs)] : []),
-  ];
-})();
+const pageImage =
+  aboutImages[0] ||
+  faqHeroImage ||
+  safetyHeroImage ||
+  locationHeroImage ||
+  extractFirstImage(safeEntry.content || "");
 const metaTitle = (() => {
   if (isAboutPage)
     return "About Cherry Blossoms | Asian Dating Brand Since 1974";
@@ -589,14 +527,90 @@ const metaDescription = (() => {
     safeEntry.seo?.description || safeEntry.excerptText || global.siteTitle
   );
 })();
+const pageSchema = (() => {
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    ...(safeEntry.route !== "/"
+      ? [{ name: stripTags(safeEntry.title || metaTitle), url: safeEntry.route }]
+      : []),
+  ];
+
+  if (isAboutPage) {
+    return [
+      buildWebPageSchema({
+        title: metaTitle,
+        description: metaDescription,
+        url: safeEntry.route,
+        type: "AboutPage",
+        image: aboutImages[0],
+      }),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  if (isFaqPage) {
+    return [
+      buildWebPageSchema({
+        title: metaTitle,
+        description: metaDescription,
+        url: safeEntry.route,
+        type: "FAQPage",
+        image: faqHeroImage,
+      }),
+      buildFaqSchema(
+        faqItems.slice(0, 20).map((item) => ({
+          question: decodeHtml(item.question),
+          answer: item.answer,
+        })),
+      ),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  if (isDatingSafetyPage) {
+    return [
+      buildCollectionPageSchema({
+        title: metaTitle,
+        description: metaDescription,
+        url: safeEntry.route,
+        image: safetyHeroImage,
+      }),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  if (isLocationDatingPage) {
+    return [
+      buildCollectionPageSchema({
+        title: metaTitle,
+        description: metaDescription,
+        url: safeEntry.route,
+        image: locationHeroImage,
+      }),
+      buildBreadcrumbSchema(breadcrumbs),
+    ];
+  }
+
+  return [
+    buildWebPageSchema({
+      title: metaTitle,
+      description: metaDescription,
+      url: safeEntry.route,
+      image: pageImage,
+    }),
+    ...(safeEntry.route !== "/" ? [buildBreadcrumbSchema(breadcrumbs)] : []),
+  ];
+})();
 const resolvedSeo = {
   ...(safeEntry.seo || {}),
   title: metaTitle,
   description: metaDescription,
-  ogTitle: safeEntry.seo?.ogTitle || metaTitle,
-  ogDescription: safeEntry.seo?.ogDescription || metaDescription,
-  twitterTitle: safeEntry.seo?.twitterTitle || metaTitle,
-  twitterDescription: safeEntry.seo?.twitterDescription || metaDescription,
+  ogTitle: metaTitle,
+  ogDescription: metaDescription,
+  ogImage: safeEntry.seo?.ogImage || pageImage || undefined,
+  twitterTitle: metaTitle,
+  twitterDescription: metaDescription,
+  twitterImage: safeEntry.seo?.twitterImage || pageImage || undefined,
   schema: pageSchema,
 };
 ---
