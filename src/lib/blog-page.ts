@@ -1,47 +1,12 @@
-import { normalizeInternalHrefHtml } from "./url-utils";
+import {
+  localizeBlossomsAssetHtml,
+  normalizeInternalHrefHtml,
+  toLocalBlossomsAssetUrl,
+} from "./url-utils";
 import type { BlogPostRecord } from "./posts";
 
-const BLOSSOMS_ORIGIN = "https://www.blossoms.com";
-
 export function absolutizeBlossomsAssets(content = "") {
-  return content
-    .replaceAll(
-      'src="/wp-content/uploads/',
-      `src="${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      "src='/wp-content/uploads/",
-      `src='${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      'href="/wp-content/uploads/',
-      `href="${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      "href='/wp-content/uploads/",
-      `href='${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      'poster="/wp-content/uploads/',
-      `poster="${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      "poster='/wp-content/uploads/",
-      `poster='${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      "url('/wp-content/uploads/",
-      `url('${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      'url("/wp-content/uploads/',
-      `url("${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replaceAll(
-      "url(/wp-content/uploads/",
-      `url(${BLOSSOMS_ORIGIN}/wp-content/uploads/`,
-    )
-    .replace(/(?<!:)\/\/www\.blossoms\.com\//g, "https://www.blossoms.com/");
+  return localizeBlossomsAssetHtml(content);
 }
 
 export function decodeHtml(value = "") {
@@ -149,7 +114,9 @@ export function mapBlogListPost(post: BlogPostRecord) {
     href: post.route,
     date: post.publishedAt || post.updatedAt,
     excerpt: stripTags(post.excerpt || post.description).slice(0, 190),
-    image: post.featuredImageUrl || extractFirstImage(post.contentHtml),
+    image: toLocalBlossomsAssetUrl(
+      post.featuredImageUrl || extractFirstImage(post.contentHtml),
+    ),
   };
 }
 
@@ -159,7 +126,8 @@ export function mapRelatedPost(post: BlogPostRecord) {
     href: post.route,
     date: post.publishedAt || post.updatedAt,
     excerpt: stripTags(post.excerpt || post.description).slice(0, 150),
-    image: post.featuredImageUrl || extractFirstImage(post.contentHtml),
+    image: toLocalBlossomsAssetUrl(
+      post.featuredImageUrl || extractFirstImage(post.contentHtml),
+    ),
   };
 }
-

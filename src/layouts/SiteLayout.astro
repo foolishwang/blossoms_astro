@@ -1,5 +1,11 @@
 ---
-import { normalizeInternalHrefHtml, toAbsoluteSiteUrl } from "../lib/url-utils";
+import ShellFooter from "../components/layout/ShellFooter.astro";
+import ShellHeader from "../components/layout/ShellHeader.astro";
+import {
+  localizeBlossomsAssetHtml,
+  toAbsoluteSiteUrl,
+  toLocalBlossomsAssetUrl,
+} from "../lib/url-utils";
 import { buildSiteSchemas } from "../lib/seo";
 
 const {
@@ -9,31 +15,12 @@ const {
   bodyClass = "",
   global,
   seo = {},
-  disableExternalAssets = false
 } = Astro.props;
 
 const robots = seo.robots || {};
-const robotsContent = [
-  robots.index,
-  robots.follow,
-  robots["max-image-preview"]
-].filter(Boolean).join(", ");
-
-function sanitizeTemplateHeader(html = "") {
-  const normalized = normalizeInternalHrefHtml(html);
-  const duplicateMobileHeaderMarker = "</header><div id=\"mobile-header\"";
-  if (normalized.includes(duplicateMobileHeaderMarker)) {
-    return `${normalized.split(duplicateMobileHeaderMarker)[0]}</header>`;
-  }
-  return normalized;
-}
-
-const hasTemplateHeader = Boolean(global.headerHtml);
-const hasTemplateFooter = Boolean(global.footerHtml);
-const normalizedTemplateHeader = sanitizeTemplateHeader(global.headerHtml || "");
-const normalizedTemplateFooter = normalizeInternalHrefHtml(global.footerHtml || "");
-const useCustomHeader = true;
-const useCustomFooter = true;
+const robotsContent = [robots.index, robots.follow, robots["max-image-preview"]]
+  .filter(Boolean)
+  .join(", ");
 const absoluteCanonical = canonical ? toAbsoluteSiteUrl(canonical) : undefined;
 const siteSchemas = buildSiteSchemas();
 const pageSchemas = Array.isArray(seo.schema)
@@ -42,132 +29,26 @@ const pageSchemas = Array.isArray(seo.schema)
     ? [seo.schema]
     : [];
 const combinedSchemas = [...siteSchemas, ...pageSchemas];
-const isStandaloneLanding = disableExternalAssets || Astro.url.pathname === "/";
-const siteTitle = global.siteTitle && global.siteTitle !== "Just a moment..." ? global.siteTitle : "Cherry Blossoms";
-const fallbackBodyClass = "home wp-singular page-template-default page page-id-44 wp-custom-logo wp-embed-responsive wp-theme-kadence footer-on-bottom hide-focus-outline link-style-standard content-title-style-hide content-width-fullwidth content-style-unboxed content-vertical-padding-hide non-transparent-header mobile-non-transparent-header";
+const siteTitle =
+  global.siteTitle && global.siteTitle !== "Just a moment..."
+    ? global.siteTitle
+    : "Cherry Blossoms";
+const fallbackBodyClass =
+  "home wp-singular page-template-default page page-id-44 wp-custom-logo wp-embed-responsive wp-theme-kadence footer-on-bottom hide-focus-outline link-style-standard content-title-style-hide content-width-fullwidth content-style-unboxed content-vertical-padding-hide non-transparent-header mobile-non-transparent-header";
 const resolvedBodyClass = bodyClass || global.bodyClass || fallbackBodyClass;
-const fallbackStylesheetLinks = [
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-rowlayout.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-column.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-image.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-navigation.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-includes/css/dist/block-library/style.min.css?ver=6.9.4",
-  "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.1/css/bootstrap.min.css?ver=6.9.4",
-  "https://www.blossoms.com/wp-content/plugins/digitalsearchgroup/css/custom.css?time=1773808340&ver=6.9.4",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/css/global.min.css?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/css/header.min.css?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/css/content.min.css?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/css/footer.min.css?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/css/simplelightbox.min.css?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-iconlist.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-advancedbtn.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-tabs.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-lottie.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-testimonials.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/css/kadence-splide.min.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/css/kb-blocks-splide.min.css?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/dist/style-blocks-accordion.css?ver=3.6.6"
-];
-const fallbackScripts = [
-  "https://www.blossoms.com/wp-includes/js/jquery/jquery.min.js?ver=3.7.1",
-  "https://www.blossoms.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/kb-navigation-block.min.js?ver=3.6.6",
-  "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.1/js/bootstrap.bundle.min.js",
-  "https://www.blossoms.com/wp-content/plugins/digitalsearchgroup/js/blossom-custom.js?time=1773808340",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/js/simplelightbox.min.js?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/js/lightbox-init.min.js?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/themes/kadence/assets/js/navigation.min.js?ver=1.4.5",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/jarallax.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/kt-init-parallax.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/kb-init-html-bg-video.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/kt-tabs.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/kb-show-more.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/splide.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/kb-splide-init.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/kt-accordion.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/lottie-dotlottie.min.js?ver=3.6.6",
-  "https://www.blossoms.com/wp-content/plugins/kadence-blocks/includes/assets/js/lottie-interactivity.min.js?ver=3.6.6"
-];
-const fallbackHeaderHtml = `
-<header class="cb-shell-header" role="banner">
-  <div class="cb-shell-header__inner">
-    <a class="cb-shell-brand" href="/" aria-label="${siteTitle}">
-      <img src="https://www.blossoms.com/wp-content/uploads/2025/05/cherry-blossoms-dating-logo.png" alt="Cherry Blossoms Dating logo" />
-    </a>
-    <button class="cb-shell-mobile-toggle" aria-label="Toggle menu" id="mobile-toggle">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-    <nav class="cb-shell-nav" id="main-nav" aria-label="Primary">
-      <a href="/">Home</a>
-      <a href="/about-us/">About Us</a>
-      <a href="/dating-safety/">Dating Safety</a>
-      <a href="/frequently-asked-questions/">FAQs</a>
-      <a href="/#locations">Locations</a>
-      <a href="/blog/">Blog</a>
-      <div class="cb-shell-nav-actions">
-        <a class="cb-shell-link" href="https://members.blossoms.com/login.php">Login</a>
-        <a class="cb-shell-button" href="https://members.blossoms.com/register.php">Register</a>
-      </div>
-    </nav>
-    <div class="cb-shell-actions desktop-only">
-      <a class="cb-shell-link" href="https://members.blossoms.com/login.php">Login</a>
-      <a class="cb-shell-button" href="https://members.blossoms.com/register.php">Register</a>
-    </div>
-  </div>
-</header>
-`;
-
-const fallbackFooterHtml = `
-<footer class="cb-shell-footer" role="contentinfo">
-  <div class="cb-shell-footer__glow"></div>
-  <div class="cb-shell-footer__inner">
-    <div class="cb-shell-footer__brand">
-      <img src="https://www.blossoms.com/wp-content/uploads/2025/03/cropped-blossoms-dating-1-1.png" alt="Cherry Blossoms Dating logo" />
-      <p>Long-term relationship focused dating since 1974. Built around trust, culture, and genuine connection.</p>
-      <div class="cb-shell-socials" aria-label="Social links">
-        <a href="https://www.instagram.com/blossomsdating/" aria-label="Instagram">IG</a>
-        <a href="https://www.facebook.com/BlossomsDating/" aria-label="Facebook">FB</a>
-        <a href="https://twitter.com/CherryBlossomsI" aria-label="Twitter">X</a>
-        <a href="https://www.tiktok.com/@blossoms.dating" aria-label="TikTok">TT</a>
-        <a href="https://www.youtube.com/c/CherryBlossomsAsianDatingFirst" aria-label="YouTube">YT</a>
-        <a href="https://www.linkedin.com/company/cherry-blossoms-inc/" aria-label="LinkedIn">IN</a>
-      </div>
-    </div>
-    <div class="cb-shell-footer__group">
-      <h2>Explore</h2>
-      <a href="/">Home</a>
-      <a href="/blog/">Blog</a>
-      <a href="/#locations">Locations</a>
-      <a href="https://members.blossoms.com/register.php">Join Blossoms</a>
-    </div>
-    <div class="cb-shell-footer__group">
-      <h2>About</h2>
-      <a href="/about-us/">About Us</a>
-      <a href="/dating-safety/">Dating Safety</a>
-      <a href="/frequently-asked-questions/">FAQs</a>
-      <a href="/contact-us/">Contact Us</a>
-    </div>
-    <div class="cb-shell-footer__group">
-      <h2>Legal</h2>
-      <a href="/terms-of-use/" rel="nofollow">Terms of Use</a>
-      <a href="/privacy-policy/" rel="nofollow">Privacy Policy</a>
-      <p class="cb-shell-footer__meta">© ${new Date().getFullYear()} Cherry Blossoms Dating®</p>
-    </div>
-  </div>
-</footer>
-`;
-const stylesheetLinks = isStandaloneLanding
-  ? []
-  : (hasTemplateHeader || hasTemplateFooter ? global.stylesheetLinks : fallbackStylesheetLinks);
-const scriptLinks = isStandaloneLanding || hasTemplateHeader ? [] : fallbackScripts;
+const fontFaceStyles = localizeBlossomsAssetHtml(
+  (global.inlineStyles || []).find((css) => css.includes("@font-face")) || "",
+);
 ---
+
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1"
+    />
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="generator" content="Astro" />
@@ -175,27 +56,55 @@ const scriptLinks = isStandaloneLanding || hasTemplateHeader ? [] : fallbackScri
     <meta name="robots" content={robotsContent || "max-image-preview:large"} />
     {absoluteCanonical && <link rel="canonical" href={absoluteCanonical} />}
     <meta property="og:title" content={seo.ogTitle || title} />
-    <meta property="og:description" content={seo.ogDescription || description} />
+    <meta
+      property="og:description"
+      content={seo.ogDescription || description}
+    />
     <meta property="og:type" content={seo.ogType || "website"} />
     <meta property="og:site_name" content="Cherry Blossoms Dating" />
-    {absoluteCanonical && <meta property="og:url" content={absoluteCanonical} />}
+    {
+      absoluteCanonical && (
+        <meta property="og:url" content={absoluteCanonical} />
+      )
+    }
     {seo.ogImage && <meta property="og:image" content={seo.ogImage} />}
-    <meta name="twitter:card" content={seo.twitterCard || "summary_large_image"} />
+    <meta
+      name="twitter:card"
+      content={seo.twitterCard || "summary_large_image"}
+    />
     <meta name="twitter:title" content={seo.twitterTitle || title} />
-    <meta name="twitter:description" content={seo.twitterDescription || description} />
+    <meta
+      name="twitter:description"
+      content={seo.twitterDescription || description}
+    />
     {seo.ogImage && <meta name="twitter:image" content={seo.ogImage} />}
-    <link rel="icon" href="https://www.blossoms.com/wp-content/uploads/2025/02/cropped-blossoms-icon-1-150x150.png" sizes="32x32" />
-    <link rel="icon" href="https://www.blossoms.com/wp-content/uploads/2025/02/cropped-blossoms-icon-1-300x300.png" sizes="192x192" />
-    <link rel="apple-touch-icon" href="https://www.blossoms.com/wp-content/uploads/2025/02/cropped-blossoms-icon-1-300x300.png" />
-    {stylesheetLinks.map((href) => (
-      <link rel="stylesheet" href={href} />
-    ))}
+    <link
+      rel="icon"
+      href={toLocalBlossomsAssetUrl(
+        "https://www.blossoms.com/wp-content/uploads/2025/02/cropped-blossoms-icon-1-150x150.png",
+      )}
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      href={toLocalBlossomsAssetUrl(
+        "https://www.blossoms.com/wp-content/uploads/2025/02/cropped-blossoms-icon-1-300x300.png",
+      )}
+      sizes="192x192"
+    />
+    <link
+      rel="apple-touch-icon"
+      href={toLocalBlossomsAssetUrl(
+        "https://www.blossoms.com/wp-content/uploads/2025/02/cropped-blossoms-icon-1-300x300.png",
+      )}
+    />
     <style is:global>
       :root {
         color-scheme: light;
       }
 
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
       }
@@ -227,267 +136,9 @@ const scriptLinks = isStandaloneLanding || hasTemplateHeader ? [] : fallbackScri
       .entry-content {
         overflow-wrap: anywhere;
       }
-
-      .cb-shell-header {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        border-bottom: 1px solid rgba(146, 55, 72, 0.08);
-        background:
-          linear-gradient(180deg, rgba(255, 251, 249, 0.97), rgba(255, 245, 241, 0.94)),
-          #fff9f7;
-        box-shadow: 0 0.75rem 1.5rem rgba(109, 35, 51, 0.05);
-      }
-
-      .cb-shell-header__inner,
-      .cb-shell-footer__inner {
-        width: min(1200px, calc(100% - 2rem));
-        margin: 0 auto;
-      }
-
-      .cb-shell-header__inner {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 1.25rem;
-        align-items: center;
-        min-height: 5rem;
-      }
-
-      .cb-shell-brand img {
-        display: block;
-        width: 15rem;
-        max-width: 100%;
-        height: auto;
-      }
-
-      .cb-shell-nav {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 1rem 1.15rem;
-      }
-
-      .cb-shell-nav a,
-      .cb-shell-link {
-        color: #5a2e39;
-        text-decoration: none;
-        font: 600 0.96rem/1.2 Poppins, sans-serif;
-      }
-
-      .cb-shell-nav a:hover,
-      .cb-shell-link:hover {
-        color: #a42a34;
-      }
-
-      .cb-shell-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.85rem;
-      }
-
-      .cb-shell-mobile-toggle {
-        display: none;
-        flex-direction: column;
-        justify-content: space-between;
-        width: 1.5rem;
-        height: 1.1rem;
-        padding: 0;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        z-index: 50;
-      }
-
-      .cb-shell-mobile-toggle span {
-        display: block;
-        width: 100%;
-        height: 2px;
-        background: #5a2e39;
-        transition: all 0.3s ease;
-      }
-
-      .cb-shell-nav-actions {
-        display: none;
-      }
-
-      .desktop-only {
-        display: flex;
-      }
-
-      .cb-shell-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 2.9rem;
-        padding: 0.75rem 1.15rem;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #df4b4b, #a42a34);
-        color: #fff;
-        text-decoration: none;
-        font: 700 0.94rem/1 Poppins, sans-serif;
-        box-shadow: 0 0.9rem 1.8rem rgba(164, 42, 52, 0.18);
-      }
-
-      .cb-shell-footer {
-        position: relative;
-        overflow: clip;
-        color: #fff5f1;
-        background:
-          radial-gradient(circle at top left, rgba(255, 162, 142, 0.22), transparent 26rem),
-          linear-gradient(180deg, #2a151b 0%, #180d11 100%);
-      }
-
-      .cb-shell-footer__glow {
-        position: absolute;
-        inset: 0;
-        background:
-          radial-gradient(circle at 85% 20%, rgba(223, 75, 75, 0.18), transparent 18rem),
-          radial-gradient(circle at 20% 100%, rgba(230, 174, 98, 0.12), transparent 20rem);
-        pointer-events: none;
-      }
-
-      .cb-shell-footer__inner {
-        position: relative;
-        display: grid;
-        grid-template-columns: 1.4fr 0.8fr 0.8fr 0.8fr;
-        gap: 1.5rem;
-        padding: 3.5rem 0 2rem;
-      }
-
-      .cb-shell-footer__brand {
-        display: grid;
-        gap: 1rem;
-      }
-
-      .cb-shell-footer__brand img {
-        width: min(18rem, 100%);
-        height: auto;
-      }
-
-      .cb-shell-footer__brand p,
-      .cb-shell-footer__meta {
-        margin: 0;
-        color: rgba(255, 245, 241, 0.72);
-        line-height: 1.7;
-        font-size: 0.95rem;
-      }
-
-      .cb-shell-socials {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.65rem;
-      }
-
-      .cb-shell-socials a {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 2.25rem;
-        height: 2.25rem;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 245, 241, 0.16);
-        background: rgba(255, 255, 255, 0.06);
-        color: #fff5f1;
-        text-decoration: none;
-        font: 700 0.72rem/1 Poppins, sans-serif;
-      }
-
-      .cb-shell-footer__group {
-        display: grid;
-        align-content: start;
-        gap: 0.85rem;
-      }
-
-      .cb-shell-footer__group h2 {
-        margin: 0;
-        color: #ffffff;
-        font: 700 1rem/1.2 Raleway, sans-serif;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
-      .cb-shell-footer__group a {
-        color: rgba(255, 245, 241, 0.78);
-        text-decoration: none;
-        font: 500 0.96rem/1.4 Poppins, sans-serif;
-      }
-
-      .cb-shell-footer__group a:hover {
-        color: #ffffff;
-      }
-
       @media (max-width: 1024px) {
         :root {
           --global-content-edge-padding: 0rem;
-        }
-
-        .cb-shell-header__inner {
-          grid-template-columns: auto 1fr;
-          padding: 0.85rem 0;
-          min-height: 4.5rem;
-        }
-
-        .cb-shell-brand img {
-          width: 12rem;
-        }
-
-        .cb-shell-mobile-toggle {
-          display: flex;
-          justify-self: end;
-        }
-
-        .cb-shell-nav {
-          position: fixed;
-          top: 0;
-          right: -100%;
-          width: 85%;
-          height: 100vh;
-          padding: 6rem 2rem;
-          flex-direction: column;
-          justify-content: flex-start;
-          align-items: flex-start;
-          background: linear-gradient(180deg, #fffdfc 0%, #fff5f1 100%);
-          box-shadow: -1rem 0 3rem rgba(59, 18, 29, 0.1);
-          transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          z-index: 45;
-        }
-
-        .cb-shell-nav.is-open {
-          right: 0;
-        }
-
-        .cb-shell-nav a {
-          font-size: 1.25rem;
-          width: 100%;
-          padding: 0.75rem 0;
-          border-bottom: 1px solid rgba(90, 46, 57, 0.08);
-        }
-
-        .cb-shell-nav-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          width: 100%;
-          margin-top: 2rem;
-        }
-
-        .desktop-only {
-          display: none;
-        }
-
-        .cb-shell-footer__inner {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        /* Mobile toggle animation */
-        .cb-shell-mobile-toggle.is-open span:nth-child(1) {
-          transform: translateY(0.45rem) rotate(45deg);
-        }
-        .cb-shell-mobile-toggle.is-open span:nth-child(2) {
-          opacity: 0;
-        }
-        .cb-shell-mobile-toggle.is-open span:nth-child(3) {
-          transform: translateY(-0.45rem) rotate(-45deg);
         }
       }
 
@@ -495,63 +146,31 @@ const scriptLinks = isStandaloneLanding || hasTemplateHeader ? [] : fallbackScri
         :root {
           --global-content-edge-padding: 0.45rem;
         }
-
-        .cb-shell-footer__inner {
-          grid-template-columns: 1fr;
-          padding-top: 2.5rem;
-        }
       }
     </style>
-    {(hasTemplateHeader || hasTemplateFooter) && global.inlineStyles.map((css) => <style is:global set:html={css} />)}
-    {combinedSchemas.map((schema) => (
-      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
-    ))}
-    <script is:inline>document.documentElement.classList.remove('no-js');</script>
+    {fontFaceStyles && <style is:global set:html={fontFaceStyles} />}
+    {
+      combinedSchemas.map((schema) => (
+        <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+      ))
+    }
+    <script is:inline>
+      document.documentElement.classList.remove("no-js");
+    </script>
   </head>
   <body class={resolvedBodyClass}>
     <div id="wrapper" class="site wp-site-blocks">
-      {!useCustomHeader && hasTemplateHeader ? (
-        <Fragment set:html={normalizedTemplateHeader} />
-      ) : (
-        <Fragment set:html={fallbackHeaderHtml} />
-      )}
-      <main id="inner-wrap" class="wrap kt-clear astro-site-content" role="main">
+      <ShellHeader siteTitle={siteTitle} />
+      <main
+        id="inner-wrap"
+        class="wrap kt-clear astro-site-content"
+        role="main"
+      >
         <div id="main">
           <slot />
         </div>
       </main>
-      {!useCustomFooter && hasTemplateFooter ? (
-        <Fragment set:html={normalizedTemplateFooter} />
-      ) : (
-        <Fragment set:html={fallbackFooterHtml} />
-      )}
+      <ShellFooter />
     </div>
-    {scriptLinks.map((src) => <script src={src}></script>)}
-    <script is:inline>
-      const toggle = document.getElementById('mobile-toggle');
-      const nav = document.getElementById('main-nav');
-      
-      if (toggle && nav) {
-        toggle.addEventListener('click', () => {
-          toggle.classList.toggle('is-open');
-          nav.classList.toggle('is-open');
-          document.body.classList.toggle('lock-scroll');
-        });
-        
-        // Close on link click
-        nav.querySelectorAll('a').forEach(link => {
-          link.addEventListener('click', () => {
-            toggle.classList.remove('is-open');
-            nav.classList.remove('is-open');
-            document.body.classList.remove('lock-scroll');
-          });
-        });
-      }
-    </script>
-    <style is:global>
-      body.lock-scroll {
-        overflow: hidden !important;
-      }
-    </style>
   </body>
 </html>

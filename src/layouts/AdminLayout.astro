@@ -1,7 +1,8 @@
 ---
 const { title = "Blossoms Admin" } = Astro.props;
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -22,7 +23,9 @@ const { title = "Blossoms Admin" } = Astro.props;
           <a href="/blog/" target="_blank" rel="noreferrer">View blog</a>
         </nav>
 
-        <button id="logout-button" class="admin-logout" type="button">Sign out</button>
+        <button id="logout-button" class="admin-logout" type="button"
+          >Sign out</button
+        >
       </aside>
 
       <main class="admin-main">
@@ -73,7 +76,9 @@ const { title = "Blossoms Admin" } = Astro.props;
     color: #a42a34;
   }
   .admin-brand strong {
-    font: 700 2rem/0.95 Raleway, serif;
+    font:
+      700 2rem/0.95 Raleway,
+      serif;
     letter-spacing: -0.04em;
   }
   .admin-nav {
@@ -90,7 +95,9 @@ const { title = "Blossoms Admin" } = Astro.props;
     border-radius: 1rem;
     background: #fff;
     color: #24161c;
-    font: 600 0.95rem/1 Poppins, sans-serif;
+    font:
+      600 0.95rem/1 Poppins,
+      sans-serif;
     text-decoration: none;
   }
   .admin-logout {

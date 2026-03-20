@@ -29,7 +29,9 @@ function mapPost(row: Record<string, unknown>): BlogPostRecord {
     excerpt: String(row.excerpt ?? ""),
     description: String(row.description ?? ""),
     contentHtml: String(row.content_html ?? ""),
-    featuredImageUrl: row.featured_image_url ? String(row.featured_image_url) : null,
+    featuredImageUrl: row.featured_image_url
+      ? String(row.featured_image_url)
+      : null,
     publishedAt: row.published_at ? String(row.published_at) : null,
     updatedAt: row.updated_at ? String(row.updated_at) : null,
     kind: String(row.kind ?? "post"),
@@ -38,7 +40,7 @@ function mapPost(row: Record<string, unknown>): BlogPostRecord {
     ogTitle: String(row.og_title ?? ""),
     ogDescription: String(row.og_description ?? ""),
     twitterTitle: String(row.twitter_title ?? ""),
-    twitterDescription: String(row.twitter_description ?? "")
+    twitterDescription: String(row.twitter_description ?? ""),
   };
 }
 
@@ -51,7 +53,7 @@ export async function listBlogPosts(limit?: number) {
       ORDER BY datetime(COALESCE(published_at, updated_at, created_at)) DESC
       ${limit ? "LIMIT ?" : ""}
     `,
-    args: limit ? [limit] : []
+    args: limit ? [limit] : [],
   });
 
   return result.rows.map((row) => mapPost(row as Record<string, unknown>));
@@ -61,7 +63,7 @@ export async function getBlogPostByRoute(route: string) {
   const db = getDb();
   const result = await db.execute({
     sql: "SELECT * FROM blog_posts WHERE route = ? LIMIT 1",
-    args: [route]
+    args: [route],
   });
 
   const row = result.rows[0];
@@ -72,7 +74,7 @@ export async function getBlogPostById(id: number) {
   const db = getDb();
   const result = await db.execute({
     sql: "SELECT * FROM blog_posts WHERE id = ? LIMIT 1",
-    args: [id]
+    args: [id],
   });
 
   const row = result.rows[0];
@@ -106,14 +108,17 @@ export async function createBlogPost(input: Omit<BlogPostRecord, "id">) {
       input.ogTitle,
       input.ogDescription,
       input.twitterTitle,
-      input.twitterDescription
-    ]
+      input.twitterDescription,
+    ],
   });
 
   return getBlogPostById(Number(result.lastInsertRowid));
 }
 
-export async function updateBlogPost(id: number, input: Omit<BlogPostRecord, "id">) {
+export async function updateBlogPost(
+  id: number,
+  input: Omit<BlogPostRecord, "id">,
+) {
   const db = getDb();
   await db.execute({
     sql: `
@@ -154,8 +159,8 @@ export async function updateBlogPost(id: number, input: Omit<BlogPostRecord, "id
       input.ogDescription,
       input.twitterTitle,
       input.twitterDescription,
-      id
-    ]
+      id,
+    ],
   });
 
   return getBlogPostById(id);

@@ -4,7 +4,10 @@ import { requireAdmin } from "../../../../lib/auth";
 import { updateBlogPost } from "../../../../lib/posts";
 
 function slugify(value = "") {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function asString(formData: FormData, key: string) {
@@ -24,7 +27,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
   if (intent === "delete") {
     await getDb().execute({
       sql: "DELETE FROM blog_posts WHERE id = ?",
-      args: [id]
+      args: [id],
     });
     return redirect("/admin/posts/", 303);
   }
@@ -50,7 +53,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     ogTitle: asString(formData, "ogTitle"),
     ogDescription: asString(formData, "ogDescription"),
     twitterTitle: asString(formData, "twitterTitle"),
-    twitterDescription: asString(formData, "twitterDescription")
+    twitterDescription: asString(formData, "twitterDescription"),
   });
 
   return redirect(`/admin/posts/${id}/`, 303);

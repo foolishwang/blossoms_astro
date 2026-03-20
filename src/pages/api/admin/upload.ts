@@ -5,18 +5,26 @@ import { randomUUID } from "node:crypto";
 import { requireAdmin } from "../../../lib/auth";
 
 function sanitizeFileName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9.-]+/g, "-").replace(/-+/g, "-");
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9.-]+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 export const POST: APIRoute = async ({ request }) => {
   const session = await requireAdmin(request.headers);
-  if (!session) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  if (!session)
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
 
   const formData = await request.formData();
   const file = formData.get("image");
 
   if (!(file instanceof File)) {
-    return new Response(JSON.stringify({ error: "Missing file" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Missing file" }), {
+      status: 400,
+    });
   }
 
   const uploadDir = join(process.cwd(), "public", "uploads", "admin");
@@ -31,12 +39,12 @@ export const POST: APIRoute = async ({ request }) => {
   return new Response(
     JSON.stringify({
       ok: true,
-      url: `/uploads/admin/${fileName}`
+      url: `/uploads/admin/${fileName}`,
     }),
     {
       headers: {
-        "content-type": "application/json"
-      }
-    }
+        "content-type": "application/json",
+      },
+    },
   );
 };

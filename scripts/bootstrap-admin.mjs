@@ -9,11 +9,15 @@ const authDbPath = join(process.cwd(), ".astro", "better-auth.sqlite");
 
 const db = new Database(authDbPath);
 const existingUser = db
-  .prepare("SELECT id, username, email FROM user WHERE username = ? OR email = ? LIMIT 1")
+  .prepare(
+    "SELECT id, username, email FROM user WHERE username = ? OR email = ? LIMIT 1",
+  )
   .get(username, email);
 
 if (existingUser) {
-  console.log(`Admin already exists: ${existingUser.username || existingUser.email}`);
+  console.log(
+    `Admin already exists: ${existingUser.username || existingUser.email}`,
+  );
   process.exit(0);
 }
 
@@ -22,8 +26,8 @@ await auth.api.signUpEmail({
     email,
     password,
     name: "Blossoms Admin",
-    username
-  }
+    username,
+  },
 });
 
 console.log(`Admin created: ${username}`);

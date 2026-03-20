@@ -1,0 +1,115 @@
+---
+type BlogCardProps = {
+  title: string;
+  href: string;
+  excerpt: string;
+  date?: string | null;
+  image?: string | null;
+};
+
+const { title, href, excerpt, date, image } = Astro.props as BlogCardProps;
+
+const formattedDate = date
+  ? new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  : "";
+---
+
+<article class="blog-card">
+  {
+    image && (
+      <a href={href} aria-label={`Read ${title}`}>
+        <img src={image} alt={title} loading="lazy" decoding="async" />
+      </a>
+    )
+  }
+  <div class="blog-card__body">
+    {formattedDate && <p class="blog-card__meta">{formattedDate}</p>}
+    <h2>
+      <a href={href}>{title}</a>
+    </h2>
+    <p>{excerpt}</p>
+    <a class="blog-card__link" href={href}>Read article</a>
+  </div>
+</article>
+
+<style>
+  .blog-card {
+    overflow: clip;
+    border: 1px solid rgba(125, 58, 66, 0.12);
+    border-radius: 1.6rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1.4rem 3rem rgba(121, 57, 67, 0.08);
+  }
+
+  .blog-card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .blog-card__body {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1.15rem 1.15rem 1.25rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .blog-card__meta {
+    margin: 0;
+    color: #8d6f78;
+    font:
+      600 0.78rem/1.2 Poppins,
+      sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .blog-card h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+
+  .blog-card h2 a {
+    color: #24161c;
+    text-decoration: none;
+  }
+
+  .blog-card h2 a:hover,
+  .blog-card__link:hover {
+    color: #a42a34;
+  }
+
+  .blog-card__body > p:last-of-type {
+    margin: 0;
+    color: #67545b;
+    line-height: 1.72;
+  }
+
+  .blog-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #a42a34;
+    font:
+      700 0.92rem/1.2 Poppins,
+      sans-serif;
+    text-decoration: none;
+  }
+
+  .blog-card__link::after {
+    content: "→";
+  }
+
+  @media (max-width: 640px) {
+    .blog-card__body {
+      padding: 1rem;
+    }
+  }
+</style>

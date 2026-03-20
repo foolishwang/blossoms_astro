@@ -9,10 +9,13 @@ if (!post) {
   Astro.response.status = 404;
 }
 ---
+
 <AdminLayout title="Edit Post | Blossoms Admin">
   {
     !post ? (
-      <section><h1>Post not found</h1></section>
+      <section>
+        <h1>Post not found</h1>
+      </section>
     ) : (
       <>
         <div
@@ -20,7 +23,7 @@ if (!post) {
           data-mode="edit"
           data-submit-url={`/api/admin/posts/${post.id}`}
           data-initial-json={JSON.stringify(post)}
-        ></div>
+        />
         <script type="module">
           import "/src/scripts/admin-editor-boot.ts";
         </script>

@@ -9,6 +9,8 @@
     "preview": "astro preview",
     "fetch:data": "node scripts/fetch-wordpress.mjs",
     "fetch:data:images": "LOCALIZE_IMAGES=1 node scripts/fetch-wordpress.mjs",
+    "assets:mirror": "node scripts/download-blossoms-assets.mjs",
+    "assets:manifest": "node scripts/build-local-asset-manifest.mjs",
     "db:sync:blog-posts": "node scripts/sync-blog-posts-to-turso.mjs",
     "admin:bootstrap": "ALLOW_ADMIN_BOOTSTRAP=true node scripts/bootstrap-admin.mjs"
   },
@@ -18,5 +20,9 @@
     "@libsql/client": "^0.15.15",
     "astro": "^5.3.1",
     "better-auth": "^1.5.5"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "prettier-plugin-astro": "^0.14.1"
   }
 }

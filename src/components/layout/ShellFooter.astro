@@ -1,0 +1,193 @@
+---
+import { toLocalBlossomsAssetUrl } from "../../lib/url-utils";
+
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="cb-shell-footer" role="contentinfo">
+  <div class="cb-shell-footer__glow"></div>
+  <div class="cb-shell-footer__inner">
+    <div class="cb-shell-footer__brand">
+      <img
+        src={toLocalBlossomsAssetUrl(
+          "https://www.blossoms.com/wp-content/uploads/2025/03/cropped-blossoms-dating-1-1.png",
+        )}
+        alt="Cherry Blossoms Dating logo"
+      />
+      <p>
+        Long-term relationship focused dating since 1974. Built around trust,
+        culture, and genuine connection.
+      </p>
+      <div class="cb-shell-socials" aria-label="Social links">
+        <a
+          href="https://www.instagram.com/blossomsdating/"
+          aria-label="Instagram">IG</a
+        >
+        <a href="https://www.facebook.com/BlossomsDating/" aria-label="Facebook"
+          >FB</a
+        >
+        <a href="https://twitter.com/CherryBlossomsI" aria-label="Twitter">X</a>
+        <a href="https://www.tiktok.com/@blossoms.dating" aria-label="TikTok"
+          >TT</a
+        >
+        <a
+          href="https://www.youtube.com/c/CherryBlossomsAsianDatingFirst"
+          aria-label="YouTube">YT</a
+        >
+        <a
+          href="https://www.linkedin.com/company/cherry-blossoms-inc/"
+          aria-label="LinkedIn">IN</a
+        >
+      </div>
+    </div>
+    <div class="cb-shell-footer__group">
+      <h2>Explore</h2>
+      <a href="/">Home</a>
+      <a href="/blog/">Blog</a>
+      <a href="/#locations">Locations</a>
+      <a href="https://members.blossoms.com/register.php">Join Blossoms</a>
+    </div>
+    <div class="cb-shell-footer__group">
+      <h2>About</h2>
+      <a href="/about-us/">About Us</a>
+      <a href="/dating-safety/">Dating Safety</a>
+      <a href="/frequently-asked-questions/">FAQs</a>
+      <a href="/contact-us/">Contact Us</a>
+    </div>
+    <div class="cb-shell-footer__group">
+      <h2>Legal</h2>
+      <a href="/terms-of-use/" rel="nofollow">Terms of Use</a>
+      <a href="/privacy-policy/" rel="nofollow">Privacy Policy</a>
+      <p class="cb-shell-footer__meta">
+        © {currentYear} Cherry Blossoms Dating®
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .cb-shell-footer {
+    position: relative;
+    overflow: clip;
+    color: #fff5f1;
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(255, 162, 142, 0.22),
+        transparent 26rem
+      ),
+      linear-gradient(180deg, #2a151b 0%, #180d11 100%);
+  }
+
+  .cb-shell-footer__glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        circle at 85% 20%,
+        rgba(223, 75, 75, 0.18),
+        transparent 18rem
+      ),
+      radial-gradient(
+        circle at 20% 100%,
+        rgba(230, 174, 98, 0.12),
+        transparent 20rem
+      );
+    pointer-events: none;
+  }
+
+  .cb-shell-footer__inner {
+    position: relative;
+    width: min(1200px, calc(100% - 2rem));
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr 0.8fr 0.8fr;
+    gap: 1.5rem;
+    padding: 3.5rem 0 2rem;
+  }
+
+  .cb-shell-footer__brand {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .cb-shell-footer__brand img {
+    width: min(18rem, 100%);
+    height: auto;
+  }
+
+  .cb-shell-footer__brand p,
+  .cb-shell-footer__meta {
+    margin: 0;
+    color: rgba(255, 245, 241, 0.72);
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
+
+  .cb-shell-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .cb-shell-socials a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 245, 241, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff5f1;
+    text-decoration: none;
+    font:
+      700 0.72rem/1 Poppins,
+      sans-serif;
+  }
+
+  .cb-shell-footer__group {
+    display: grid;
+    align-content: start;
+    gap: 0.85rem;
+  }
+
+  .cb-shell-footer__group h2 {
+    margin: 0;
+    color: #ffffff;
+    font:
+      700 1rem/1.2 Raleway,
+      sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .cb-shell-footer__group a {
+    color: rgba(255, 245, 241, 0.78);
+    text-decoration: none;
+    font:
+      500 0.96rem/1.4 Poppins,
+      sans-serif;
+  }
+
+  .cb-shell-footer__group a:hover {
+    color: #ffffff;
+  }
+
+  @media (max-width: 1024px) {
+    .cb-shell-footer__inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 767px) {
+    :global(:root) {
+      --global-content-edge-padding: 0.45rem;
+    }
+
+    .cb-shell-footer__inner {
+      grid-template-columns: 1fr;
+      padding-top: 2.5rem;
+    }
+  }
+</style>

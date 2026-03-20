@@ -1,8 +1,12 @@
 import { authClient } from "../lib/auth-client";
 
 const form = document.getElementById("login-form") as HTMLFormElement | null;
-const errorNode = document.getElementById("login-error") as HTMLParagraphElement | null;
-const submitButton = document.getElementById("login-submit") as HTMLButtonElement | null;
+const errorNode = document.getElementById(
+  "login-error",
+) as HTMLParagraphElement | null;
+const submitButton = document.getElementById(
+  "login-submit",
+) as HTMLButtonElement | null;
 
 if (form && errorNode && submitButton) {
   form.addEventListener("submit", async (event) => {
@@ -19,7 +23,7 @@ if (form && errorNode && submitButton) {
     try {
       const { error } = await authClient.signIn.username({
         username: String(data.get("username") || ""),
-        password: String(data.get("password") || "")
+        password: String(data.get("password") || ""),
       });
 
       if (error) {
@@ -31,7 +35,9 @@ if (form && errorNode && submitButton) {
       window.location.href = next;
     } catch (error) {
       errorNode.textContent =
-        error instanceof Error ? error.message : "Something went wrong while signing in.";
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while signing in.";
       errorNode.hidden = false;
     } finally {
       submitButton.disabled = false;

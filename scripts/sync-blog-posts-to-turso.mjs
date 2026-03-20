@@ -2,7 +2,8 @@ import { createClient } from "@libsql/client";
 import routes from "../src/data/routes.json" with { type: "json" };
 
 const databaseUrl =
-  process.env.TURSO_DATABASE_URL || "libsql://blossomsastro-weixiyu.aws-us-west-2.turso.io";
+  process.env.TURSO_DATABASE_URL ||
+  "libsql://blossomsastro-weixiyu.aws-us-west-2.turso.io";
 const authToken = process.env.TURSO_AUTH_TOKEN;
 
 if (!authToken) {
@@ -12,7 +13,7 @@ if (!authToken) {
 
 const client = createClient({
   url: databaseUrl,
-  authToken
+  authToken,
 });
 
 const posts = routes
@@ -29,11 +30,12 @@ const posts = routes
     updatedAt: post.modified || post.date || null,
     kind: post.kind || "post",
     seoTitle: post.seo?.title || post.title || "",
-    seoDescription: post.seo?.description || post.description || post.excerptText || "",
+    seoDescription:
+      post.seo?.description || post.description || post.excerptText || "",
     ogTitle: post.seo?.ogTitle || "",
     ogDescription: post.seo?.ogDescription || "",
     twitterTitle: post.seo?.twitterTitle || "",
-    twitterDescription: post.seo?.twitterDescription || ""
+    twitterDescription: post.seo?.twitterDescription || "",
   }));
 
 function extractFirstImage(content = "") {
@@ -70,9 +72,11 @@ async function main() {
   `);
 
   await client.execute(
-    "CREATE INDEX IF NOT EXISTS idx_blog_posts_published_at ON blog_posts(published_at DESC);"
+    "CREATE INDEX IF NOT EXISTS idx_blog_posts_published_at ON blog_posts(published_at DESC);",
   );
-  await client.execute("CREATE INDEX IF NOT EXISTS idx_blog_posts_slug ON blog_posts(slug);");
+  await client.execute(
+    "CREATE INDEX IF NOT EXISTS idx_blog_posts_slug ON blog_posts(slug);",
+  );
 
   for (const post of posts) {
     await client.execute({
@@ -130,12 +134,14 @@ async function main() {
         post.ogTitle,
         post.ogDescription,
         post.twitterTitle,
-        post.twitterDescription
-      ]
+        post.twitterDescription,
+      ],
     });
   }
 
-  const result = await client.execute("SELECT COUNT(*) AS count FROM blog_posts");
+  const result = await client.execute(
+    "SELECT COUNT(*) AS count FROM blog_posts",
+  );
   console.log(`Sync complete. blog_posts rows: ${result.rows[0].count}`);
 
   await client.close();

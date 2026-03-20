@@ -1,8 +1,10 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 ---
+
 <AdminLayout title="New Post | Blossoms Admin">
-  <div id="editor-root" data-mode="create" data-submit-url="/api/admin/posts"></div>
+  <div id="editor-root" data-mode="create" data-submit-url="/api/admin/posts">
+  </div>
   <script type="module">
     import "/src/scripts/admin-editor-boot.ts";
   </script>

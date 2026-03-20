@@ -1,7 +1,8 @@
 ---
 const next = Astro.url.searchParams.get("next") || "/admin/posts/";
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -13,16 +14,29 @@ const next = Astro.url.searchParams.get("next") || "/admin/posts/";
       <section class="login-card">
         <p class="login-kicker">Blossoms Admin</p>
         <h1>Sign in to manage posts</h1>
-        <p class="login-copy">Use the admin credentials to edit blog posts, upload images, and publish updates.</p>
+        <p class="login-copy">
+          Use the admin credentials to edit blog posts, upload images, and
+          publish updates.
+        </p>
 
         <form id="login-form" class="login-form" data-next={next}>
           <label>
             <span>Username</span>
-            <input name="username" value="admin" autocomplete="username" required />
+            <input
+              name="username"
+              value="admin"
+              autocomplete="username"
+              required
+            />
           </label>
           <label>
             <span>Password</span>
-            <input name="password" type="password" autocomplete="current-password" required />
+            <input
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
           </label>
           <button id="login-submit" type="submit">Sign In</button>
           <p id="login-error" class="login-error" hidden></p>
@@ -42,7 +56,11 @@ const next = Astro.url.searchParams.get("next") || "/admin/posts/";
     margin: 0;
     font-family: Poppins, sans-serif;
     background:
-      radial-gradient(circle at top, rgba(244, 67, 54, 0.18), transparent 28rem),
+      radial-gradient(
+        circle at top,
+        rgba(244, 67, 54, 0.18),
+        transparent 28rem
+      ),
       linear-gradient(180deg, #fff8f4 0%, #fffdfc 100%);
     color: #24161c;
   }
@@ -70,7 +88,9 @@ const next = Astro.url.searchParams.get("next") || "/admin/posts/";
   }
   h1 {
     margin: 0;
-    font: 700 clamp(2rem, 6vw, 3rem) / 0.95 Raleway, serif;
+    font:
+      700 clamp(2rem, 6vw, 3rem) / 0.95 Raleway,
+      serif;
     letter-spacing: -0.04em;
   }
   .login-copy {
@@ -108,7 +128,9 @@ const next = Astro.url.searchParams.get("next") || "/admin/posts/";
     padding: 1rem 1.2rem;
     background: linear-gradient(135deg, #c72d39 0%, #e34c55 100%);
     color: #fff;
-    font: 700 1rem/1 Poppins, sans-serif;
+    font:
+      700 1rem/1 Poppins,
+      sans-serif;
     cursor: pointer;
   }
   .login-form button[disabled] {

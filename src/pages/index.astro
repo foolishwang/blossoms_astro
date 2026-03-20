@@ -2,7 +2,7 @@
 import routes from "../data/routes.json";
 import global from "../data/global.json";
 import SiteLayout from "../layouts/SiteLayout.astro";
-import { toRelativeSiteUrl } from "../lib/url-utils";
+import { toLocalBlossomsAssetUrl, toRelativeSiteUrl } from "../lib/url-utils";
 import { buildBreadcrumbSchema, buildWebPageSchema } from "../lib/seo";
 
 const home = routes.find((entry) => entry.route === "/");
@@ -47,7 +47,7 @@ function extractTestimonials(content = "") {
         "https://www.blossoms.com/wp-content/uploads/2025/02/location1-dating-site-online-couple-david-and-phoebe.png",
         "https://www.blossoms.com/wp-content/uploads/2025/02/location1-dating-site-online-couple-john-and-sienna.png",
         "https://www.blossoms.com/wp-content/uploads/2025/02/location1-dating-site-online-couple-doug-and-jheng.png",
-      ][index] || "",
+      ].map((url) => toLocalBlossomsAssetUrl(url))[index] || "",
   }));
 }
 
@@ -93,15 +93,21 @@ const popularCities = locations.flatMap((group) => group.cities).slice(0, 18);
 
 const featuredLogos = [
   {
-    src: "https://www.blossoms.com/wp-content/uploads/2025/02/fox-news-asian-dating-site-philippines-review.png",
+    src: toLocalBlossomsAssetUrl(
+      "https://www.blossoms.com/wp-content/uploads/2025/02/fox-news-asian-dating-site-philippines-review.png",
+    ),
     alt: "Fox News asian dating site Philippines review",
   },
   {
-    src: "https://www.blossoms.com/wp-content/uploads/2025/02/yahoo-news-philippines-dating-site-review.png",
+    src: toLocalBlossomsAssetUrl(
+      "https://www.blossoms.com/wp-content/uploads/2025/02/yahoo-news-philippines-dating-site-review.png",
+    ),
     alt: "Yahoo News Philippines dating site review",
   },
   {
-    src: "https://www.blossoms.com/wp-content/uploads/2025/02/bloomberg-philippines-dating-website-reviews.png",
+    src: toLocalBlossomsAssetUrl(
+      "https://www.blossoms.com/wp-content/uploads/2025/02/bloomberg-philippines-dating-website-reviews.png",
+    ),
     alt: "Bloomberg Philippines dating website reviews",
   },
 ];
@@ -134,7 +140,8 @@ const pillars = [
   {
     id: "different",
     tab: "Why We're Different",
-    title: "Why Blossoms feels different from faster, lower-trust dating platforms",
+    title:
+      "Why Blossoms feels different from faster, lower-trust dating platforms",
     body: "Blossoms is built around trust signals that matter in Asian dating: profile verification, safer messaging, a longer operating history, and a member base oriented toward real relationships instead of disposable attention loops.",
   },
   {
@@ -154,7 +161,8 @@ const pillars = [
 const bodyClass =
   global.bodyClass ||
   "home wp-singular page-template-default page page-id-44 wp-custom-logo wp-embed-responsive wp-theme-kadence footer-on-bottom hide-focus-outline link-style-standard content-title-style-hide content-width-fullwidth content-style-unboxed content-vertical-padding-hide non-transparent-header mobile-non-transparent-header";
-const homeTitle = "Cherry Blossoms Asian Dating | International Asian Dating Since 1974";
+const homeTitle =
+  "Cherry Blossoms Asian Dating | International Asian Dating Since 1974";
 const homeDescription =
   "Cherry Blossoms is an Asian dating site for people seeking meaningful international relationships. Discover Asian dating, real members, and long-term connections since 1974.";
 const homeSchema = [
@@ -260,8 +268,12 @@ const homeSchema = [
       <div class="video-hero">
         <video
           class="video-hero__media"
-          src="https://www.blossoms.com/wp-content/uploads/2025/06/AboutUsBlossomsDatin-1.mp4"
-          poster="https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg"
+          src={toLocalBlossomsAssetUrl(
+            "https://www.blossoms.com/wp-content/uploads/2025/06/AboutUsBlossomsDatin-1.mp4",
+          )}
+          poster={toLocalBlossomsAssetUrl(
+            "https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg",
+          )}
           autoplay
           muted
           loop
@@ -375,7 +387,9 @@ const homeSchema = [
         <div class="overview-card__media">
           <div class="image-card image-card--overview">
             <img
-              src="https://www.blossoms.com/wp-content/uploads/2025/02/blossoms-dating-site-philippines-members.jpg"
+              src={toLocalBlossomsAssetUrl(
+                "https://www.blossoms.com/wp-content/uploads/2025/02/blossoms-dating-site-philippines-members.jpg",
+              )}
               alt="Asian online dating site in the Philippines"
               loading="lazy"
               decoding="async"
@@ -500,7 +514,9 @@ const homeSchema = [
           href="https://play.google.com/store/apps/details?id=com.cherryblossoms.dating&pli=1"
         >
           <img
-            src="https://www.blossoms.com/wp-content/uploads/2025/03/get-blossoms-asian-dating-app-in-play-store.png"
+            src={toLocalBlossomsAssetUrl(
+              "https://www.blossoms.com/wp-content/uploads/2025/03/get-blossoms-asian-dating-app-in-play-store.png",
+            )}
             alt="Get Blossoms Asian dating app in Play Store"
             loading="lazy"
             decoding="async"
@@ -554,7 +570,9 @@ const homeSchema = [
       <aside class="faq__media" aria-hidden="true">
         <img
           class="faq__image"
-          src="https://www.blossoms.com/wp-content/uploads/2025/02/Depositphotos_230654110_XL-scaled.jpg"
+          src={toLocalBlossomsAssetUrl(
+            "https://www.blossoms.com/wp-content/uploads/2025/02/Depositphotos_230654110_XL-scaled.jpg",
+          )}
           alt="Asian online dating site Philippines"
           loading="lazy"
           decoding="async"
@@ -683,10 +701,24 @@ const homeSchema = [
     .eyebrow {
       margin: 0;
       color: var(--accent-deep);
-      font-size: 0.82rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-kicker::before {
+      content: '';
+      display: inline-block;
+      width: 1.6rem;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-deep), var(--accent));
+      border-radius: 1px;
+      flex-shrink: 0;
     }
 
     .hero {
@@ -943,10 +975,14 @@ const homeSchema = [
     .faq h2,
     .locations h2,
     .about h2 {
-      margin: 0.35rem 0 0;
-      font-size: clamp(2rem, 3.2vw, 3.4rem);
-      line-height: 1.05;
-      letter-spacing: -0.03em;
+      margin: 0.5rem 0 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+      font-size: clamp(1.65rem, 2.6vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.22;
+      letter-spacing: -0.025em;
+      text-wrap: balance;
+      color: var(--ink);
     }
 
     .featured__logos {
@@ -1058,8 +1094,13 @@ const homeSchema = [
 
     .video-hero h2 {
       color: #fff !important;
-      margin: 0.35rem 0 0;
-      max-width: 22rem;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+      font-size: clamp(1.65rem, 2.6vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.22;
+      letter-spacing: -0.025em;
+      margin: 0.5rem 0 0;
+      max-width: 24rem;
       text-wrap: balance;
     }
 
@@ -1283,9 +1324,11 @@ const homeSchema = [
 
     .overview-card__copy h2 {
       margin: 0;
-      font-size: clamp(2rem, 3.8vw, 3.5rem);
-      line-height: 1.15;
-      letter-spacing: -0.02em;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+      font-size: clamp(1.85rem, 3.2vw, 2.85rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
       text-wrap: balance;
       word-break: break-word;
     }
@@ -2044,8 +2087,8 @@ const homeSchema = [
 
       .overview-card__copy h2 {
         max-width: none;
-        font-size: clamp(2rem, 9vw, 2.85rem);
-        line-height: 0.98;
+        font-size: clamp(1.65rem, 7vw, 2.35rem);
+        line-height: 1.18;
       }
 
       .overview-card__body {

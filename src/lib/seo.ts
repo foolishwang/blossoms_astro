@@ -1,4 +1,4 @@
-import { toAbsoluteSiteUrl } from "./url-utils";
+import { toAbsoluteSiteUrl, toLocalBlossomsAssetUrl } from "./url-utils";
 
 const SITE_NAME = "Cherry Blossoms Dating";
 const SITE_ORIGIN = "https://www.blossoms.com";
@@ -18,7 +18,11 @@ export function buildSiteSchemas() {
       "@type": "Organization",
       name: SITE_NAME,
       url: SITE_ORIGIN,
-      logo: toAbsoluteSiteUrl("/wp-content/uploads/2025/05/cherry-blossoms-dating-logo.png"),
+      logo: toAbsoluteSiteUrl(
+        toLocalBlossomsAssetUrl(
+          "https://www.blossoms.com/wp-content/uploads/2025/05/cherry-blossoms-dating-logo.png",
+        ),
+      ),
       sameAs: DEFAULT_SOCIALS,
     },
     {
@@ -31,7 +35,9 @@ export function buildSiteSchemas() {
   ];
 }
 
-export function buildBreadcrumbSchema(items: Array<{ name: string; url: string }>) {
+export function buildBreadcrumbSchema(
+  items: Array<{ name: string; url: string }>,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -128,14 +134,20 @@ export function buildBlogPostingSchema({
       name: SITE_NAME,
       logo: {
         "@type": "ImageObject",
-        url: toAbsoluteSiteUrl("/wp-content/uploads/2025/05/cherry-blossoms-dating-logo.png"),
+        url: toAbsoluteSiteUrl(
+          toLocalBlossomsAssetUrl(
+            "https://www.blossoms.com/wp-content/uploads/2025/05/cherry-blossoms-dating-logo.png",
+          ),
+        ),
       },
     },
     inLanguage: "en-US",
   };
 }
 
-export function buildFaqSchema(items: Array<{ question: string; answer: string }>) {
+export function buildFaqSchema(
+  items: Array<{ question: string; answer: string }>,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",

@@ -8,14 +8,12 @@ const API_BASE = `${SITE_URL}/wp-json/wp/v2`;
 const OUTPUT_DIR = new URL("../src/data/", import.meta.url);
 const PUBLIC_DIR = new URL("../public/", import.meta.url);
 const LOCAL_ASSET_PREFIX = "/assets/wp";
-const IMAGE_URL_PATTERN = /https:\/\/www\.blossoms\.com\/[^"'()\s]+?\.(?:png|jpe?g|webp|gif|svg|avif|ico)(?:\?[^"'()\s]*)?/gi;
+const IMAGE_URL_PATTERN =
+  /https:\/\/www\.blossoms\.com\/[^"'()\s]+?\.(?:png|jpe?g|webp|gif|svg|avif|ico|mp4)(?:\?[^"'()\s]*)?/gi;
 const FALLBACK_GLOBAL = {
   siteTitle: "Cherry Blossoms",
   bodyClass: "",
-  headerHtml: "",
-  footerHtml: "",
-  stylesheetLinks: [],
-  inlineStyles: []
+  inlineStyles: [],
 };
 const SEEDED_ASSET_URLS = [
   "https://www.blossoms.com/wp-content/uploads/2025/05/cherry-blossoms-dating-logo.png",
@@ -32,12 +30,13 @@ const SEEDED_ASSET_URLS = [
   "https://www.blossoms.com/wp-content/uploads/2025/02/blossoms-dating-site-philippines-members.jpg",
   "https://www.blossoms.com/wp-content/uploads/2025/03/get-blossoms-asian-dating-app-in-play-store.png",
   "https://www.blossoms.com/wp-content/uploads/2025/02/Depositphotos_230654110_XL-scaled.jpg",
-  "https://www.blossoms.com/wp-content/uploads/2025/02/blossoms-asian-dating-site-philippines-2.jpg"
+  "https://www.blossoms.com/wp-content/uploads/2025/02/blossoms-asian-dating-site-philippines-2.jpg",
 ];
 
 const REQUEST_HEADERS = {
   Accept: "application/json, text/html;q=0.9,*/*;q=0.8",
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
 };
 const SHOULD_LOCALIZE_IMAGES = process.env.LOCALIZE_IMAGES === "1";
 
@@ -60,9 +59,9 @@ function curlDownload(url, outputPath) {
       `Accept: ${REQUEST_HEADERS.Accept}`,
       "-o",
       outputPath,
-      url
+      url,
     ],
-    { stdio: "pipe" }
+    { stdio: "pipe" },
   );
 }
 
@@ -81,7 +80,7 @@ async function fetchJson(url) {
       REQUEST_HEADERS["User-Agent"],
       "-H",
       `Accept: ${REQUEST_HEADERS.Accept}`,
-      String(url)
+      String(url),
     ]);
 
     return JSON.parse(raw);
@@ -103,18 +102,22 @@ async function fetchText(url) {
       REQUEST_HEADERS["User-Agent"],
       "-H",
       `Accept: ${REQUEST_HEADERS.Accept}`,
-      url
+      url,
     ]);
   } catch (error) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`, { cause: error });
+    throw new Error(`Failed to fetch ${url}: ${response.status}`, {
+      cause: error,
+    });
   }
 }
 
 async function fetchAll(endpoint, params) {
   const firstUrl = new URL(`${API_BASE}/${endpoint}`);
-  Object.entries({ ...params, per_page: "100", page: "1" }).forEach(([key, value]) => {
-    firstUrl.searchParams.set(key, value);
-  });
+  Object.entries({ ...params, per_page: "100", page: "1" }).forEach(
+    ([key, value]) => {
+      firstUrl.searchParams.set(key, value);
+    },
+  );
 
   let totalPages = 1;
 
@@ -141,7 +144,7 @@ async function fetchAll(endpoint, params) {
       REQUEST_HEADERS["User-Agent"],
       "-H",
       `Accept: ${REQUEST_HEADERS.Accept}`,
-      String(firstUrl)
+      String(firstUrl),
     ]);
 
     const totalPagesMatch = headers.match(/x-wp-totalpages:\s*(\d+)/i);
@@ -166,12 +169,17 @@ function decodeHtmlEntities(value = "") {
     .replaceAll("&#8217;", "'")
     .replaceAll("&#8230;", "...")
     .replaceAll("&amp;", "&")
-    .replaceAll("&quot;", "\"")
+    .replaceAll("&quot;", '"')
     .replaceAll("&#039;", "'");
 }
 
 function stripTags(value = "") {
-  return decodeHtmlEntities(value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+  return decodeHtmlEntities(
+    value
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 }
 
 function absolutizeContent(content = "") {
@@ -189,7 +197,8 @@ function absolutizeContent(content = "") {
 function normalizeSeo(rawSeo, fallback) {
   const seo = rawSeo || {};
   const canonical = seo.canonical || fallback.link;
-  const description = seo.description || stripTags(fallback.excerpt || fallback.content || "");
+  const description =
+    seo.description || stripTags(fallback.excerpt || fallback.content || "");
   const title = seo.title || decodeHtmlEntities(fallback.title);
   const ogImage = seo.og_image?.[0]?.url || seo.og_image?.[0]?.src || null;
 
@@ -205,7 +214,7 @@ function normalizeSeo(rawSeo, fallback) {
     twitterCard: seo.twitter_card || "summary_large_image",
     twitterTitle: seo.twitter_title || title,
     twitterDescription: seo.twitter_description || description,
-    schema: seo.schema || null
+    schema: seo.schema || null,
   };
 }
 
@@ -240,7 +249,9 @@ function collectAssetUrlsFromObject(value, bucket) {
   }
 
   if (typeof value === "object") {
-    Object.values(value).forEach((item) => collectAssetUrlsFromObject(item, bucket));
+    Object.values(value).forEach((item) =>
+      collectAssetUrlsFromObject(item, bucket),
+    );
   }
 }
 
@@ -248,10 +259,16 @@ function localAssetPath(url) {
   const parsed = new URL(url);
   const pathname = parsed.pathname.replace(/^\/+/, "");
   const extension = extname(pathname);
-  const querySuffix = parsed.search ? `-${Buffer.from(parsed.search).toString("hex").slice(0, 12)}` : "";
-  const safePath = querySuffix && extension
-    ? pathname.replace(new RegExp(`${extension}$`), `${querySuffix}${extension}`)
-    : `${pathname}${querySuffix}`;
+  const querySuffix = parsed.search
+    ? `-${Buffer.from(parsed.search).toString("hex").slice(0, 12)}`
+    : "";
+  const safePath =
+    querySuffix && extension
+      ? pathname.replace(
+          new RegExp(`${extension}$`),
+          `${querySuffix}${extension}`,
+        )
+      : `${pathname}${querySuffix}`;
 
   return `${LOCAL_ASSET_PREFIX}/${safePath}`;
 }
@@ -318,7 +335,10 @@ function rewriteAssetUrlsInObject(value, assetMap) {
 
   if (typeof value === "object") {
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, rewriteAssetUrlsInObject(item, assetMap)])
+      Object.entries(value).map(([key, item]) => [
+        key,
+        rewriteAssetUrlsInObject(item, assetMap),
+      ]),
     );
   }
 
@@ -347,37 +367,28 @@ function mapRecord(record, kind) {
       title,
       excerpt,
       content,
-      link
-    })
+      link,
+    }),
   };
 }
 
 function extractGlobalTemplate(homeHtml) {
   const titleMatch = homeHtml.match(/<title>(.*?)<\/title>/i);
   const bodyClassMatch = homeHtml.match(/<body[^>]*class="([^"]*)"/i);
-  const headerMatch = homeHtml.match(/(<header id="masthead"[\s\S]*?<\/header>)/i);
-  const mobileHeaderMatch = homeHtml.match(/(<div id="mobile-header"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>)/i);
-  const footerMatch = homeHtml.match(/(<footer[\s\S]*?<\/footer>)/i);
-
-  const stylesheetLinks = Array.from(
-    homeHtml.matchAll(/<link[^>]+rel=['"]stylesheet['"][^>]*href=['"]([^'"]+)['"][^>]*>/gi),
-    (match) => match[1]
-  );
-
-  const inlineStyles = Array.from(homeHtml.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi), (match) => match[1]).slice(0, 20);
+  const inlineStyles = Array.from(
+    homeHtml.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi),
+    (match) => match[1],
+  ).filter((css) => css.includes("@font-face"));
 
   return {
     siteTitle: decodeHtmlEntities(titleMatch?.[1] || "Cherry Blossoms"),
     bodyClass: bodyClassMatch?.[1] || "",
-    headerHtml: `${headerMatch?.[1] || ""}${mobileHeaderMatch?.[1] || ""}`,
-    footerHtml: footerMatch?.[1] || "",
-    stylesheetLinks,
-    inlineStyles
+    inlineStyles,
   };
 }
 
 function isChallengePage(global) {
-  return !global.headerHtml && /just a moment/i.test(global.siteTitle);
+  return /just a moment/i.test(global.siteTitle);
 }
 
 function isUsableGlobalTemplate(global) {
@@ -385,7 +396,11 @@ function isUsableGlobalTemplate(global) {
     return false;
   }
 
-  return !isChallengePage(global) && global.siteTitle && typeof global.siteTitle === "string";
+  return (
+    !isChallengePage(global) &&
+    global.siteTitle &&
+    typeof global.siteTitle === "string"
+  );
 }
 
 async function readExistingJson(fileName) {
@@ -404,16 +419,17 @@ async function main() {
   const [homeHtml, pages, posts] = await Promise.all([
     fetchText(`${SITE_URL}/`),
     fetchAll("pages", {
-      _fields: "id,slug,link,title,excerpt,content,yoast_head_json,date,modified"
+      _fields:
+        "id,slug,link,title,excerpt,content,yoast_head_json,date,modified",
     }),
     fetchAll("posts", {
-      _fields: "id,slug,link,title,excerpt,content,yoast_head_json,date,modified"
-    })
+      _fields:
+        "id,slug,link,title,excerpt,content,yoast_head_json,date,modified",
+    }),
   ]);
 
   const extractedGlobal = extractGlobalTemplate(homeHtml);
   const existingGlobal = await readExistingJson("./global.json");
-  const existingFailures = await readExistingJson("./asset-failures.json");
   const global = isUsableGlobalTemplate(extractedGlobal)
     ? extractedGlobal
     : isUsableGlobalTemplate(existingGlobal)
@@ -421,19 +437,21 @@ async function main() {
       : FALLBACK_GLOBAL;
   const mappedPages = pages.map((record) => mapRecord(record, "page"));
   const mappedPosts = posts.map((record) => mapRecord(record, "post"));
-  const routes = [...mappedPages, ...mappedPosts].sort((left, right) => left.route.localeCompare(right.route));
+  const routes = [...mappedPages, ...mappedPosts].sort((left, right) =>
+    left.route.localeCompare(right.route),
+  );
 
   let localizedGlobal = global;
   let localizedRoutes = routes;
   let successfulAssets = new Map();
-  let failedAssets = Array.isArray(existingFailures) ? [...existingFailures] : [];
+  let failedAssets = [];
 
   if (SHOULD_LOCALIZE_IMAGES) {
     const assetUrls = new Set();
 
-    collectAssetUrlsFromString(global.headerHtml, assetUrls);
-    collectAssetUrlsFromString(global.footerHtml, assetUrls);
-    global.inlineStyles.forEach((css) => collectAssetUrlsFromString(css, assetUrls));
+    global.inlineStyles.forEach((css) =>
+      collectAssetUrlsFromString(css, assetUrls),
+    );
     SEEDED_ASSET_URLS.forEach((url) => assetUrls.add(url));
 
     for (const route of routes) {
@@ -443,47 +461,53 @@ async function main() {
     }
 
     const assetMap = new Map(
-      [...assetUrls].sort((left, right) => left.localeCompare(right)).map((url) => [url, localAssetPath(url)])
+      [...assetUrls]
+        .sort((left, right) => left.localeCompare(right))
+        .map((url) => [url, localAssetPath(url)]),
     );
 
-    const failedAssetSet = new Set(failedAssets);
-
     for (const [remoteUrl, localPath] of assetMap.entries()) {
-      if (failedAssetSet.has(remoteUrl)) {
-        continue;
-      }
-
       const ok = await ensureAssetDownloaded(remoteUrl, localPath);
       if (ok) {
         successfulAssets.set(remoteUrl, localPath);
       } else {
         failedAssets.push(remoteUrl);
-        failedAssetSet.add(remoteUrl);
       }
     }
 
     localizedGlobal = {
       ...global,
-      headerHtml: rewriteAssetUrlsInString(global.headerHtml, successfulAssets),
-      footerHtml: rewriteAssetUrlsInString(global.footerHtml, successfulAssets),
-      inlineStyles: global.inlineStyles.map((css) => rewriteAssetUrlsInString(css, successfulAssets))
+      inlineStyles: global.inlineStyles.map((css) =>
+        rewriteAssetUrlsInString(css, successfulAssets),
+      ),
     };
 
     localizedRoutes = routes.map((route) => ({
       ...route,
       excerpt: rewriteAssetUrlsInString(route.excerpt, successfulAssets),
       content: rewriteAssetUrlsInString(route.content, successfulAssets),
-      seo: rewriteAssetUrlsInObject(route.seo, successfulAssets)
+      seo: rewriteAssetUrlsInObject(route.seo, successfulAssets),
     }));
   }
 
   await Promise.all([
-    writeFile(new URL("./global.json", OUTPUT_DIR), JSON.stringify(localizedGlobal, null, 2)),
-    writeFile(new URL("./routes.json", OUTPUT_DIR), JSON.stringify(localizedRoutes, null, 2)),
-    writeFile(new URL("./asset-failures.json", OUTPUT_DIR), JSON.stringify(failedAssets, null, 2))
+    writeFile(
+      new URL("./global.json", OUTPUT_DIR),
+      JSON.stringify(localizedGlobal, null, 2),
+    ),
+    writeFile(
+      new URL("./routes.json", OUTPUT_DIR),
+      JSON.stringify(localizedRoutes, null, 2),
+    ),
+    writeFile(
+      new URL("./asset-failures.json", OUTPUT_DIR),
+      JSON.stringify(failedAssets, null, 2),
+    ),
   ]);
 
-  console.log(`Fetched ${mappedPages.length} pages and ${mappedPosts.length} posts.`);
+  console.log(
+    `Fetched ${mappedPages.length} pages and ${mappedPosts.length} posts.`,
+  );
   if (SHOULD_LOCALIZE_IMAGES) {
     console.log(`Localized ${successfulAssets.size} image assets.`);
   } else {

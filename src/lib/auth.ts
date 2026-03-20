@@ -4,7 +4,10 @@ import Database from "better-sqlite3";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-const baseURL = import.meta.env.BETTER_AUTH_URL || process.env.BETTER_AUTH_URL || "http://localhost:4322";
+const baseURL =
+  import.meta.env.BETTER_AUTH_URL ||
+  process.env.BETTER_AUTH_URL ||
+  "http://localhost:4322";
 const authDirectory = join(process.cwd(), ".astro");
 const authDatabasePath = join(authDirectory, "better-auth.sqlite");
 
@@ -27,15 +30,16 @@ export const auth = betterAuth({
     "http://127.0.0.1:4321",
     "http://localhost:4322",
     "http://127.0.0.1:4322",
-    "https://www.blossoms.com"
+    "https://www.blossoms.com",
   ],
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
     disableSignUp:
-      (import.meta.env.ALLOW_ADMIN_BOOTSTRAP || process.env.ALLOW_ADMIN_BOOTSTRAP) !== "true"
+      (import.meta.env.ALLOW_ADMIN_BOOTSTRAP ||
+        process.env.ALLOW_ADMIN_BOOTSTRAP) !== "true",
   },
-  plugins: [username()]
+  plugins: [username()],
 });
 
 export async function getSession(headers: Headers) {
@@ -44,9 +48,13 @@ export async function getSession(headers: Headers) {
 
 export async function requireAdmin(headers: Headers) {
   const session = await getSession(headers);
-  const username = session?.user && "username" in session.user ? session.user.username : undefined;
+  const username =
+    session?.user && "username" in session.user
+      ? session.user.username
+      : undefined;
 
-  const adminUsername = import.meta.env.ADMIN_USERNAME || process.env.ADMIN_USERNAME;
+  const adminUsername =
+    import.meta.env.ADMIN_USERNAME || process.env.ADMIN_USERNAME;
 
   if (!session || username !== adminUsername) {
     return null;

@@ -8,7 +8,8 @@ const handleAuth: APIRoute = async ({ request }) => {
     url.pathname = url.pathname.replace(/\/+$/, "");
   }
 
-  const normalizedRequest = url.toString() === request.url ? request : new Request(url, request);
+  const normalizedRequest =
+    url.toString() === request.url ? request : new Request(url, request);
   return auth.handler(normalizedRequest);
 };
 

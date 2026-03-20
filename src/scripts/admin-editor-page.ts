@@ -111,15 +111,31 @@ export function createEditorPage(config: EditorConfig) {
     </section>
   `;
 
-  const uploadForm = document.getElementById("upload-form") as HTMLFormElement | null;
+  const uploadForm = document.getElementById(
+    "upload-form",
+  ) as HTMLFormElement | null;
   const uploadStatus = document.getElementById("upload-status");
-  const featuredImageInput = document.getElementById("featured-image-url") as HTMLInputElement | null;
-  const contentHtml = document.getElementById("content-html") as HTMLTextAreaElement | null;
-  const editorForm = root.querySelector(".editor-form") as HTMLFormElement | null;
-  const visualEditor = document.getElementById("content-visual") as HTMLDivElement | null;
-  const visualModeButton = document.getElementById("visual-mode-btn") as HTMLButtonElement | null;
-  const htmlModeButton = document.getElementById("html-mode-btn") as HTMLButtonElement | null;
-  const toolbar = document.getElementById("editor-toolbar") as HTMLDivElement | null;
+  const featuredImageInput = document.getElementById(
+    "featured-image-url",
+  ) as HTMLInputElement | null;
+  const contentHtml = document.getElementById(
+    "content-html",
+  ) as HTMLTextAreaElement | null;
+  const editorForm = root.querySelector(
+    ".editor-form",
+  ) as HTMLFormElement | null;
+  const visualEditor = document.getElementById(
+    "content-visual",
+  ) as HTMLDivElement | null;
+  const visualModeButton = document.getElementById(
+    "visual-mode-btn",
+  ) as HTMLButtonElement | null;
+  const htmlModeButton = document.getElementById(
+    "html-mode-btn",
+  ) as HTMLButtonElement | null;
+  const toolbar = document.getElementById(
+    "editor-toolbar",
+  ) as HTMLDivElement | null;
 
   let isHtmlMode = false;
 
@@ -134,7 +150,14 @@ export function createEditorPage(config: EditorConfig) {
   };
 
   const setMode = (mode: "visual" | "html") => {
-    if (!contentHtml || !visualEditor || !visualModeButton || !htmlModeButton || !toolbar) return;
+    if (
+      !contentHtml ||
+      !visualEditor ||
+      !visualModeButton ||
+      !htmlModeButton ||
+      !toolbar
+    )
+      return;
 
     isHtmlMode = mode === "html";
     if (isHtmlMode) {
@@ -152,10 +175,16 @@ export function createEditorPage(config: EditorConfig) {
 
   toolbar?.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
-    const button = target?.closest("button[data-command]") as HTMLButtonElement | null;
+    const button = target?.closest(
+      "button[data-command]",
+    ) as HTMLButtonElement | null;
     if (!button || !visualEditor) return;
     visualEditor.focus();
-    document.execCommand(button.dataset.command || "", false, button.dataset.value || undefined);
+    document.execCommand(
+      button.dataset.command || "",
+      false,
+      button.dataset.value || undefined,
+    );
     syncHtmlFromVisual();
   });
 
@@ -191,7 +220,7 @@ export function createEditorPage(config: EditorConfig) {
     const formData = new FormData(uploadForm);
     const response = await fetch("/api/admin/upload", {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
     const payload = await response.json();
@@ -208,7 +237,12 @@ export function createEditorPage(config: EditorConfig) {
     if (!contentHtml || !featuredImageInput?.value) return;
     const snippet = `\n<figure class="wp-block-image size-full"><img src="${featuredImageInput.value}" alt="" /></figure>\n`;
     if (isHtmlMode) {
-      contentHtml.setRangeText(snippet, contentHtml.selectionStart, contentHtml.selectionEnd, "end");
+      contentHtml.setRangeText(
+        snippet,
+        contentHtml.selectionStart,
+        contentHtml.selectionEnd,
+        "end",
+      );
       contentHtml.focus();
       syncVisualFromHtml();
       return;

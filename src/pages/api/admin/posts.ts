@@ -3,7 +3,10 @@ import { createBlogPost } from "../../../lib/posts";
 import { requireAdmin } from "../../../lib/auth";
 
 function slugify(value = "") {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function asString(formData: FormData, key: string) {
@@ -19,7 +22,8 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   const manualSlug = asString(formData, "slug");
   const slug = manualSlug || slugify(title);
   const route = `/blog/${slug}/`;
-  const publishedAt = asString(formData, "publishedAt") || new Date().toISOString();
+  const publishedAt =
+    asString(formData, "publishedAt") || new Date().toISOString();
 
   const post = await createBlogPost({
     route,
@@ -37,7 +41,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     ogTitle: asString(formData, "ogTitle"),
     ogDescription: asString(formData, "ogDescription"),
     twitterTitle: asString(formData, "twitterTitle"),
-    twitterDescription: asString(formData, "twitterDescription")
+    twitterDescription: asString(formData, "twitterDescription"),
   });
 
   return redirect(`/admin/posts/${post?.id}/`, 303);

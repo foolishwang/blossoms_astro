@@ -10,6 +10,6 @@ if (root) {
   createEditorPage({
     mode: mode === "edit" ? "edit" : "create",
     submitUrl: submitUrl || "/api/admin/posts",
-    initialData: initialJson ? JSON.parse(initialJson) : undefined
+    initialData: initialJson ? JSON.parse(initialJson) : undefined,
   });
 }
