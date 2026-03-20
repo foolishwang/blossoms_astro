@@ -2213,29 +2213,32 @@ const homeSchema = [
       }
 
       .hero {
-        min-height: auto;
+        min-height: max(44rem, 88svh);
+        height: auto;
         align-items: flex-start;
         overflow: visible;
         overflow-x: clip;
         background:
           linear-gradient(
             180deg,
-            rgba(22, 12, 17, 0.68) 0%,
-            rgba(22, 12, 17, 0.28) 100%
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 246, 240, 0.03) 42%,
+            rgba(14, 8, 12, 0.12) 100%
           ),
           url("/assets/wp/wp-content/uploads/2025/07/medium-shot-smiley-woman-outdoors.jpg-768x1152.webp")
-            center top / cover no-repeat;
+            center 12% / cover no-repeat;
       }
 
       .hero__backdrop {
         background:
           linear-gradient(
             180deg,
-            rgba(22, 12, 17, 0.68) 0%,
-            rgba(22, 12, 17, 0.28) 100%
+            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 246, 240, 0.03) 42%,
+            rgba(14, 8, 12, 0.12) 100%
           ),
           url("/assets/wp/wp-content/uploads/2025/07/medium-shot-smiley-woman-outdoors.jpg-768x1152.webp")
-            center top / cover no-repeat;
+            center 12% / cover no-repeat;
       }
 
       .hero__grid,
@@ -2284,9 +2287,10 @@ const homeSchema = [
         width: 90%;
         max-width: 90%;
         transform: translateX(-50%);
-        padding: 10px 20px;
-        background: rgba(255, 255, 255, 0.35);
-        backdrop-filter: none;
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.56);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 14px 34px rgba(53, 28, 35, 0.14);
       }
 
       .cb-line1 {
