@@ -208,69 +208,40 @@ const homeSchema = [
   disableExternalAssets={true}
 >
   <div class="home-redesign">
-    <section class="hero">
+    <section class="hero hero-section">
       <div class="hero__backdrop"></div>
-      <div class="shell hero__grid">
-        <div class="hero__copy">
-          <p class="eyebrow">Asian Dating Since 1974</p>
-          <h1>Start your journey to <br />something meaningful.</h1>
-          <p class="lede">
-            Cherry Blossoms is an Asian dating brand for serious connections,
-            cultural openness, and a more intentional path to international
-            relationships.
-          </p>
-          <ul class="hero__checks">
-            <li>Established since 1974</li>
-            <li>Real members worldwide</li>
-            <li>Designed for long-term relationships</li>
-          </ul>
-        </div>
-
-        <aside class="hero__panel">
-          <div class="hero__badge">🌸 Start Your Journey</div>
+      <div class="shell hero__grid" style="height:100%;">
+        <aside class="cb-hero-box">
+          <h2 class="cb-hero-title">🌸 Start Your Journey</h2>
           <a
-            class="cta cta--male"
+            class="cb-btn cb-btn-male"
             href="https://members.blossoms.com/register.php?gender=male&adid=www"
             target="_blank"
             rel="noreferrer noopener"
           >
-            <span>I Am a Man...</span>
-            <small>Seeking a Meaningful Relationship</small>
+            <span class="cb-line1">I Am a Man...</span>
+            <span class="cb-line2">Seeking a Meaningful Relationship</span>
           </a>
           <a
-            class="cta cta--female"
+            class="cb-btn cb-btn-female"
             href="https://members.blossoms.com/register.php?gender=female&adid=www"
             target="_blank"
             rel="noreferrer noopener"
           >
-            <span>I Am a Woman...</span>
-            <small>Seeking a Meaningful Relationship</small>
+            <span class="cb-line1">I Am a Woman...</span>
+            <span class="cb-line2">Seeking a Meaningful Relationship</span>
           </a>
-          <ul class="hero__trust">
-            <li>Established Since 1974</li>
-            <li>Real Members Worldwide</li>
-          </ul>
-          <p class="hero__login">
-            Already a member?
-            <a href="https://members.blossoms.com/login.php">Login</a>
-          </p>
+          <div class="cb-trust">
+            ✓ Established Since 1974<br />
+            ✓ Real Members Worldwide
+          </div>
+          <div class="cb-login">
+            <strong>
+              Already a Member?
+              <a href="https://members.blossoms.com/login.php">Login</a>
+            </strong>
+          </div>
         </aside>
-      </div>
-    </section>
-
-    <section class="shell hero-mobile-copy" aria-label="Hero introduction">
-      <div class="hero-mobile-copy__inner">
-        <p class="eyebrow">Asian Dating Since 1974</p>
-        <h1>Start your journey to something meaningful.</h1>
-        <p class="lede">
-          Cherry Blossoms is an Asian dating brand for serious connections,
-          cultural openness, and a more intentional path to international
-          relationships.
-        </p>
-        <ul class="hero__checks">
-          <li>Established since 1974</li>
-          <li>Real members worldwide</li>
-        </ul>
       </div>
     </section>
 
@@ -842,8 +813,14 @@ const homeSchema = [
       flex-shrink: 0;
     }
 
-    .hero {
+    #menu-item-25344 a {
+      color: #ff0000;
+    }
+
+    .hero,
+    .hero-section {
       position: relative;
+      height: 60vh;
       min-height: min(52rem, 100vh - 70px);
       display: flex;
       align-items: center;
@@ -914,96 +891,80 @@ const homeSchema = [
       font-weight: 700;
     }
 
-    .hero__panel {
-      justify-self: end;
-      width: min(31rem, 100%);
-      margin-top: 50px;
-      padding: 1.8rem;
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      border-radius: 1.75rem;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: none;
-      box-shadow: 0 2rem 5rem rgba(20, 10, 14, 0.28);
-      display: grid;
-      gap: 1.5rem;
+    .cb-hero-box {
+      position: absolute;
+      left: 10px;
+      bottom: 200px;
+      max-width: 520px;
+      width: 90%;
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
     }
 
-    .hero__badge {
-      justify-self: center;
-      padding: 0.55rem 1rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
-      color: var(--accent-deep);
+    .cb-hero-title {
+      margin: 0 0 25px;
+      font-size: 24px;
       font-weight: 700;
     }
 
-    .cta {
+    .cb-btn {
       display: grid;
-      gap: 0.25rem;
+      gap: 4px;
       text-align: center;
-      padding: 1.15rem 1.2rem;
-      border-radius: 1.35rem;
-      transition:
-        transform 180ms ease,
-        box-shadow 180ms ease;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+      padding: 20px;
+      margin: 18px 0;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: 600;
     }
 
-    .cta:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 1.25rem 2rem rgba(39, 20, 28, 0.16);
+    .cb-btn-male {
+      background: linear-gradient(to right, #cfe3ff, #a8c8ff);
+      color: #1f2d3d;
     }
 
-    .cta span {
-      font-size: 1.3rem;
+    .cb-btn-female {
+      background: linear-gradient(to right, #ffd1dc, #ffb6c1);
+      color: #1f2d3d;
+    }
+
+    .cb-btn span {
+      display: block;
+    }
+
+    .cb-line1 {
+      font-size: 20px;
       font-weight: 700;
     }
 
-    .cta small {
-      font-size: 0.96rem;
-      color: #3f3136;
+    .cb-line2 {
+      font-size: 16px;
+      margin-top: 4px;
     }
 
-    .cta--male {
-      background: linear-gradient(135deg, #d9e8ff, #b5d1ff);
+    .cb-trust {
+      margin-top: 20px;
+      font-size: 15px;
+      color: #1f2d3d;
+      line-height: 1.6;
     }
 
-    .cta--female {
-      background: linear-gradient(135deg, #ffdce3, #ffc3d1);
+    .cb-login {
+      margin-top: 20px;
+      color: #1f2d3d;
     }
 
-    .hero__login {
-      margin: 0.25rem 0 0;
-      text-align: center;
-      color: #000000;
-      font-weight: 800;
-      font-size: 1.5rem;
-      line-height: 1.2;
+    .cb-login strong {
+      font-size: 20px;
     }
 
-    .hero__login a {
-      color: var(--accent);
+    .cb-login a {
+      color: #d62828;
+      font-weight: 600;
       text-decoration: underline;
-    }
-
-    .hero__trust {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 0.45rem;
-      justify-content: center;
-      color: rgba(255, 248, 243, 0.96);
-      font-size: 0.95rem;
-      line-height: 1.4;
-      text-align: center;
-    }
-
-    .hero__trust li::before {
-      content: "✓";
-      margin-right: 0.45rem;
-      color: #ffd494;
-      font-weight: 700;
     }
 
     .hero-mobile-copy {
@@ -2196,10 +2157,6 @@ const homeSchema = [
         align-items: start;
       }
 
-      .hero__panel {
-        justify-self: stretch;
-      }
-
       .about__rail {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -2305,54 +2262,30 @@ const homeSchema = [
         display: none;
       }
 
-      .hero__panel {
-        justify-self: center;
+      .cb-hero-box {
+        left: 50%;
+        bottom: 100px;
         width: 90%;
         max-width: 90%;
-        box-sizing: border-box;
-        margin-left: auto;
-        margin-right: auto;
-        margin-top: calc(6rem + 100px);
-        padding: 1rem 0.9rem 1.05rem;
-        gap: 0.9rem;
-        border-radius: 1.4rem;
-        border-color: rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: none;
-        box-shadow: 0 0.65rem 1.5rem rgba(20, 10, 14, 0.08);
+        transform: translateX(-50%);
+        padding: 10px 20px;
       }
 
-      .hero__badge {
-        padding: 0.45rem 0.82rem;
-        font-size: 0.9rem;
-      }
-
-      .cta {
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-        padding: 1rem 0.9rem;
-        border-radius: 1.1rem;
-      }
-
-      .cta span {
+      .cb-line1 {
         font-size: 1rem;
       }
 
-      .cta small {
-        font-size: 0.72rem;
-        line-height: 1.35;
+      .cb-line2 {
+        font-size: 0.75rem;
       }
 
-      .hero__login {
-        margin-top: 0;
-        font-size: 1.05rem;
+      .cb-login strong {
+        font-size: 1rem;
       }
 
-      .hero__trust {
-        gap: 0.35rem;
-        font-size: 0.8rem;
-        line-height: 1.35;
+      .cb-trust {
+        font-size: 0.82rem;
+        line-height: 1.5;
       }
 
       .hero-mobile-copy {
