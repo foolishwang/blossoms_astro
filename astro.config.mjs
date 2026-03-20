@@ -1,11 +1,9 @@
 import { defineConfig } from "astro/config";
-import node from "@astrojs/node";
+import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
   site: "https://www.blossoms.com",
   output: "server",
-  adapter: node({
-    mode: "standalone"
-  }),
-  trailingSlash: "ignore"
+  adapter: cloudflare(),
+  trailingSlash: "ignore",
 });

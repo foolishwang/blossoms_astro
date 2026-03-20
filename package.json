@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "deploy": "wrangler deploy",
     "preview": "astro preview",
     "fetch:data": "node scripts/fetch-wordpress.mjs",
     "fetch:data:images": "LOCALIZE_IMAGES=1 node scripts/fetch-wordpress.mjs",
@@ -15,14 +16,15 @@
     "admin:bootstrap": "ALLOW_ADMIN_BOOTSTRAP=true node scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.5",
+    "@astrojs/cloudflare": "^13.1.2",
     "@better-auth/cli": "^1.4.21",
     "@libsql/client": "^0.15.15",
-    "astro": "^5.3.1",
+    "astro": "^6.0.7",
     "better-auth": "^1.5.5"
   },
   "devDependencies": {
     "prettier": "^3.8.1",
-    "prettier-plugin-astro": "^0.14.1"
+    "prettier-plugin-astro": "^0.14.1",
+    "wrangler": "^4.75.0"
   }
 }
