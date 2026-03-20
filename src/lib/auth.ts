@@ -8,42 +8,57 @@ const baseURL =
   import.meta.env.BETTER_AUTH_URL ||
   process.env.BETTER_AUTH_URL ||
   "http://localhost:4322";
-const authDirectory = join(process.cwd(), ".astro");
-const authDatabasePath = join(authDirectory, "better-auth.sqlite");
 
-if (!existsSync(authDirectory)) {
-  mkdirSync(authDirectory, { recursive: true });
+let authInstance: ReturnType<typeof betterAuth> | null = null;
+
+function getAuth() {
+  if (authInstance) {
+    return authInstance;
+  }
+
+  const authDirectory = join(process.cwd(), ".astro");
+  const authDatabasePath = join(authDirectory, "better-auth.sqlite");
+
+  if (!existsSync(authDirectory)) {
+    mkdirSync(authDirectory, { recursive: true });
+  }
+
+  const authDatabase = new Database(authDatabasePath);
+
+  authInstance = betterAuth({
+    appName: "Blossoms Admin",
+    baseURL,
+    secret:
+      import.meta.env.BETTER_AUTH_SECRET ||
+      process.env.BETTER_AUTH_SECRET ||
+      "blossoms-admin-secret-change-me-2026",
+    database: authDatabase,
+    trustedOrigins: [
+      "http://localhost:4321",
+      "http://127.0.0.1:4321",
+      "http://localhost:4322",
+      "http://127.0.0.1:4322",
+      "https://www.blossoms.com",
+    ],
+    emailAndPassword: {
+      enabled: true,
+      autoSignIn: true,
+      disableSignUp:
+        (import.meta.env.ALLOW_ADMIN_BOOTSTRAP ||
+          process.env.ALLOW_ADMIN_BOOTSTRAP) !== "true",
+    },
+    plugins: [username()],
+  });
+
+  return authInstance;
 }
 
-const authDatabase = new Database(authDatabasePath);
-
-export const auth = betterAuth({
-  appName: "Blossoms Admin",
-  baseURL,
-  secret:
-    import.meta.env.BETTER_AUTH_SECRET ||
-    process.env.BETTER_AUTH_SECRET ||
-    "blossoms-admin-secret-change-me-2026",
-  database: authDatabase,
-  trustedOrigins: [
-    "http://localhost:4321",
-    "http://127.0.0.1:4321",
-    "http://localhost:4322",
-    "http://127.0.0.1:4322",
-    "https://www.blossoms.com",
-  ],
-  emailAndPassword: {
-    enabled: true,
-    autoSignIn: true,
-    disableSignUp:
-      (import.meta.env.ALLOW_ADMIN_BOOTSTRAP ||
-        process.env.ALLOW_ADMIN_BOOTSTRAP) !== "true",
-  },
-  plugins: [username()],
-});
+export function getAuthHandler() {
+  return getAuth();
+}
 
 export async function getSession(headers: Headers) {
-  return auth.api.getSession({ headers });
+  return getAuth().api.getSession({ headers });
 }
 
 export async function requireAdmin(headers: Headers) {

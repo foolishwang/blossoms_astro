@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { auth } from "../../../lib/auth";
+import { getAuthHandler } from "../../../lib/auth";
 
 const handleAuth: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -10,7 +10,7 @@ const handleAuth: APIRoute = async ({ request }) => {
 
   const normalizedRequest =
     url.toString() === request.url ? request : new Request(url, request);
-  return auth.handler(normalizedRequest);
+  return getAuthHandler().handler(normalizedRequest);
 };
 
 export const GET = handleAuth;
