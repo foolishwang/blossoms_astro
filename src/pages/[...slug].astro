@@ -13,31 +13,22 @@ import {
   buildWebPageSchema,
 } from "../lib/seo";
 
-export const prerender = false;
+export const prerender = true;
 
-const pathname = new URL(Astro.request.url).pathname;
-const currentRoute = pathname.endsWith("/") ? pathname : `${pathname}/`;
-const routeEntry = routes.find((route) => route.route === currentRoute) || null;
-const entry = routeEntry;
+export function getStaticPaths() {
+  return routes
+    .filter((route) => !route.route.startsWith("/blog/"))
+    .map((route) => {
+      const trimmedRoute = route.route.replace(/^\/|\/$/g, "");
 
-const notFound = !entry;
-if (notFound) {
-  Astro.response.status = 404;
+      return {
+        params: { slug: trimmedRoute || undefined },
+        props: { entry: route },
+      };
+    });
 }
-const safeEntry = entry || {
-  route: currentRoute,
-  link: currentRoute,
-  kind: "page",
-  title: "Page Not Found",
-  excerptText: "",
-  description: "",
-  content:
-    "<h1>Page not found</h1><p>The requested page could not be found.</p>",
-  seo: {
-    title: "Page Not Found",
-    description: "",
-  },
-};
+
+const safeEntry = Astro.props.entry;
 
 const title = safeEntry.title;
 const description = safeEntry.excerptText || global.siteTitle;

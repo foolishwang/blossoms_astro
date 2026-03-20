@@ -1,6 +1,4 @@
 ---
-import { toLocalBlossomsAssetUrl } from "../../lib/url-utils";
-
 const { siteTitle = "Cherry Blossoms" } = Astro.props;
 const pathname = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
@@ -19,7 +17,7 @@ function isActivePath(href = "") {
   <div class="cb-shell-header__inner">
     <a class="cb-shell-brand" href="/" aria-label={siteTitle}>
       <img
-        src="/public/assets/images/www-blossoms-com-logo.png"
+        src="/assets/images/www-blossoms-com-logo.png"
         alt="Cherry Blossoms Dating logo"
       />
     </a>
