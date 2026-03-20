@@ -2212,9 +2212,9 @@ const homeSchema = [
       }
 
       .hero {
-        min-height: 60svh;
+        min-height: calc(100svh - 72px);
         height: auto;
-        align-items: flex-start;
+        align-items: stretch;
         overflow: visible;
         overflow-x: clip;
         background:
@@ -2270,8 +2270,10 @@ const homeSchema = [
         width: 100%;
         max-width: 100%;
         gap: 1.25rem;
-        padding-top: 2.75rem;
-        padding-bottom: 2rem;
+        min-height: calc(100svh - 72px);
+        align-content: end;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
         justify-items: center;
         overflow-x: clip;
       }
@@ -2283,10 +2285,9 @@ const homeSchema = [
       .cb-hero-box {
         position: relative;
         left: auto;
-        top: 0px;
         width: 90%;
         max-width: 90%;
-        margin-top: clamp(17rem, 36vh, 24rem);
+        margin-top: 0;
         transform: none;
         padding: 12px 20px;
         background: rgba(255, 255, 255, 0.35);
