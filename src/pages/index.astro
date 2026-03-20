@@ -244,15 +244,14 @@ const homeSchema = [
             <span>I Am a Woman...</span>
             <small>Seeking a Meaningful Relationship</small>
           </a>
+          <ul class="hero__trust">
+            <li>Established Since 1974</li>
+            <li>Real Members Worldwide</li>
+          </ul>
           <p class="hero__login">
             Already a member?
             <a href="https://members.blossoms.com/login.php">Login</a>
           </p>
-          <div class="hero__microproof">
-            <span>50+ years of matchmaking</span>
-            <span>Verified profiles</span>
-            <span>Worldwide community</span>
-          </div>
         </aside>
       </div>
     </section>
@@ -930,21 +929,24 @@ const homeSchema = [
       text-decoration: underline;
     }
 
-    .hero__microproof {
-      display: flex;
-      flex-wrap: wrap;
+    .hero__trust {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.45rem;
       justify-content: center;
-      gap: 0.55rem;
+      color: rgba(255, 248, 243, 0.96);
+      font-size: 0.95rem;
+      line-height: 1.4;
+      text-align: center;
     }
 
-    .hero__microproof span {
-      padding: 0.45rem 0.7rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.14);
-      color: rgba(255, 248, 243, 0.92);
-      font-size: 0.8rem;
-      line-height: 1;
-      border: 1px solid rgba(255, 255, 255, 0.18);
+    .hero__trust li::before {
+      content: "✓";
+      margin-right: 0.45rem;
+      color: #ffd494;
+      font-weight: 700;
     }
 
     .hero-mobile-copy {
@@ -2235,20 +2237,10 @@ const homeSchema = [
         font-size: 0.92rem;
       }
 
-      .hero__microproof {
-        gap: 0.4rem;
-        max-width: 14rem;
-        margin: 0 auto;
-        justify-content: center;
-      }
-
-      .hero__microproof span:nth-child(3) {
-        display: none;
-      }
-
-      .hero__microproof span {
-        padding: 0.34rem 0.56rem;
-        font-size: 0.7rem;
+      .hero__trust {
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        line-height: 1.35;
       }
 
       .hero-mobile-copy {
