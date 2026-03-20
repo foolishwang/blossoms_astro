@@ -588,7 +588,7 @@ const pageImage =
   extractFirstImage(safeEntry.content || "");
 const metaTitle = (() => {
   if (isAboutPage)
-    return "About Cherry Blossoms | Asian Dating Brand Since 1974";
+    return "About Cherry Blossoms Dating | Asian Dating Since 1974";
   if (isFaqPage) return "Asian Dating FAQs | Cherry Blossoms Help Center";
   if (isDatingSafetyPage) return "Asian Dating Safety Tips | Cherry Blossoms";
   if (isLocationDatingPage)
@@ -597,7 +597,7 @@ const metaTitle = (() => {
 })();
 const metaDescription = (() => {
   if (isAboutPage) {
-    return "Learn about Cherry Blossoms, an Asian dating brand serving international singles since 1974 with a focus on trust, long-term relationships, and meaningful connections.";
+    return "Learn about Cherry Blossoms Dating, an international Asian dating site and Filipina dating brand serving serious relationships since 1974 with a focus on trust, safety, and long-term connection.";
   }
   if (isFaqPage) {
     return "Find answers about Cherry Blossoms, Asian dating memberships, profiles, messaging, billing, safety, and technical support in one organized FAQ guide.";
@@ -629,6 +629,31 @@ const pageSchema = (() => {
         type: "AboutPage",
         image: aboutImages[0],
       }),
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "Cherry Blossoms Dating",
+        alternateName: "Cherry Blossoms",
+        url: "https://www.blossoms.com/",
+        foundingDate: "1974-02-22",
+        areaServed: "Worldwide",
+        description: metaDescription,
+        knowsAbout: [
+          "Asian dating site",
+          "Filipina dating",
+          "international dating",
+          "serious relationships",
+          "dating safety",
+        ],
+        sameAs: [
+          "https://www.facebook.com/BlossomsDating/",
+          "https://www.instagram.com/blossomsdating/",
+          "https://twitter.com/CherryBlossomsI",
+          "https://www.youtube.com/c/CherryBlossomsAsianDatingFirst",
+          "https://www.linkedin.com/company/cherry-blossoms-inc/",
+          "https://www.tiktok.com/@blossoms.dating",
+        ],
+      },
       buildBreadcrumbSchema(breadcrumbs),
     ];
   }
@@ -691,6 +716,9 @@ const resolvedSeo = {
   ...(safeEntry.seo || {}),
   title: metaTitle,
   description: metaDescription,
+  keywords: isAboutPage
+    ? "about Cherry Blossoms, Cherry Blossoms Dating, Asian dating site, international dating, Filipina dating, serious relationships, dating brand since 1974"
+    : safeEntry.seo?.keywords,
   ogTitle: metaTitle,
   ogDescription: metaDescription,
   ogImage: safeEntry.seo?.ogImage || pageImage || undefined,
@@ -739,7 +767,7 @@ const resolvedSeo = {
                 <figure class="about-hero__media about-hero__media--portrait">
                   <img
                     src={aboutImages[1]}
-                    alt="Blossoms Dating"
+                    alt="Cherry Blossoms Dating brand portrait"
                     loading="eager"
                     decoding="async"
                   />
@@ -753,7 +781,9 @@ const resolvedSeo = {
                   Blossoms is not trying to look like a disposable dating app.
                   The differentiator is continuity: decades of operating
                   history, a clear international niche, and a more deliberate
-                  approach to matching.
+                  approach to matching. If you want the practical side of that
+                  trust story, see <a href="/dating-safety/">Dating Safety</a>{" "}
+                  or browse the <a href="/frequently-asked-questions/">FAQ guide</a>.
                 </p>
               </div>
             </div>
@@ -833,7 +863,9 @@ const resolvedSeo = {
                 <p>
                   The imagery is less about glossy performance and more about
                   warmth, sincerity, and real-world connection. That tone helps
-                  the brand feel older, steadier, and more credible.
+                  the brand feel older, steadier, and more credible. For
+                  current advice and relationship stories, visit the{" "}
+                  <a href="/blog/">Blossoms blog</a>.
                 </p>
               </div>
               <div class="about-gallery__grid">
@@ -846,7 +878,7 @@ const resolvedSeo = {
                   >
                     <img
                       src={image}
-                      alt="Blossoms Dating history"
+                      alt="Cherry Blossoms Dating history imagery"
                       loading="lazy"
                       decoding="async"
                     />
@@ -882,7 +914,8 @@ const resolvedSeo = {
               <p>
                 The brand advantage is not novelty. It is continuity, trust, and
                 a clearer expectation that the people joining are there for
-                something serious.
+                something serious. People exploring specific cities can also
+                start from the <a href="/#locations">locations directory</a>.
               </p>
             </div>
             <div class="faq-cta__actions">

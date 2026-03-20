@@ -197,6 +197,8 @@ const homeSchema = [
     ...(home.seo || {}),
     title: homeTitle,
     description: homeDescription,
+    keywords:
+      "Asian dating, Asian dating site, Filipina dating, Filipino dating site, Philippines dating site, Asian singles, Filipina singles, international dating, serious relationships, Cherry Blossoms Dating",
     ogTitle: "Cherry Blossoms | Asian Dating Since 1974",
     ogDescription: homeDescription,
     twitterTitle: "Cherry Blossoms | Asian Dating Since 1974",
@@ -700,6 +702,17 @@ const homeSchema = [
         label.textContent = isMuted ? "Sound" : "Mute";
       };
 
+      window.__homeVideoControls = {
+        unmute: async () => {
+          if (!player) return;
+          isMuted = false;
+          player.muted = false;
+          player.volume = 1;
+          await player.play();
+          syncButton();
+        },
+      };
+
       const setupPlayer = () => {
         if (typeof window.Stream !== "function") return false;
         player = window.Stream(iframe);
@@ -756,6 +769,7 @@ const homeSchema = [
             await document.exitFullscreen();
           } else {
             await frame.requestFullscreen();
+            await window.__homeVideoControls?.unmute?.();
           }
         } catch (_error) {
           return;
@@ -926,6 +940,7 @@ const homeSchema = [
     .cta {
       display: grid;
       gap: 0.25rem;
+      text-align: center;
       padding: 1.15rem 1.2rem;
       border-radius: 1.35rem;
       transition:
