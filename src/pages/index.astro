@@ -239,45 +239,15 @@ const homeSchema = [
     <section class="shell split--media">
       <div class="video-hero">
         <div class="video-hero__frame">
-          <video
-            id="home-stream-player"
+          <iframe
             class="video-hero__media"
-            src={toLocalBlossomsAssetUrl(
-              "https://www.blossoms.com/wp-content/uploads/2025/06/AboutUsBlossomsDatin-1.mp4",
-            )}
+            src="https://customer-8t8x7431waj10zps.cloudflarestream.com/1a390dc7e554d93a2a8e344523321eda/iframe?poster=https%3A%2F%2Fcustomer-8t8x7431waj10zps.cloudflarestream.com%2F1a390dc7e554d93a2a8e344523321eda%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600"
             title={homeCopy.videoTitle}
-            poster={toLocalBlossomsAssetUrl(
-              "https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg",
-            )}
-            autoplay
-            muted
-            loop
-            playsinline
-            preload="auto"
-          ></video>
+            loading="lazy"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+            allowfullscreen
+          ></iframe>
         </div>
-        <button
-          class="video-hero__sound-toggle"
-          type="button"
-          data-home-video-toggle
-          data-sound-label={homeCopy.videoSound}
-          data-mute-label={homeCopy.videoMute}
-          aria-pressed="false"
-        >
-          <span class="video-hero__sound-icon" aria-hidden="true">♪</span>
-          <span data-home-video-toggle-label>{homeCopy.videoSound}</span>
-        </button>
-        <button
-          class="video-hero__fullscreen-toggle"
-          type="button"
-          data-home-video-fullscreen
-          data-fullscreen-label={homeCopy.videoFullscreen}
-          data-exit-fullscreen-label={homeCopy.videoExitFullscreen}
-          aria-pressed="false"
-        >
-          <span class="video-hero__fullscreen-icon" aria-hidden="true">⛶</span>
-          <span data-home-video-fullscreen-label>{homeCopy.videoFullscreen}</span>
-        </button>
       </div>
     </section>
 
@@ -567,111 +537,6 @@ const homeSchema = [
     </section>
   </div>
 
-  <script is:inline>
-    (() => {
-      const video = document.getElementById("home-stream-player");
-      if (!(video instanceof HTMLVideoElement)) return;
-
-      const tryPlay = () => {
-        video.play().catch(() => {});
-      };
-
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", tryPlay, { once: true });
-      } else {
-        tryPlay();
-      }
-    })();
-  </script>
-
-  <script is:inline>
-    (() => {
-      const video = document.getElementById("home-stream-player");
-      const button = document.querySelector("[data-home-video-toggle]");
-      const label = document.querySelector("[data-home-video-toggle-label]");
-      const videoHero = document.querySelector(".video-hero");
-      if (!(video instanceof HTMLVideoElement) || !button || !label || !videoHero) return;
-      const soundLabel = button.getAttribute("data-sound-label") || label.textContent || "Sound";
-      const muteLabel = button.getAttribute("data-mute-label") || "Mute";
-      let isMuted = true;
-
-      const syncButton = () => {
-        button.setAttribute("aria-pressed", String(!isMuted));
-        button.classList.toggle("is-active", !isMuted);
-        label.textContent = isMuted ? soundLabel : muteLabel;
-      };
-
-      window.__homeVideoControls = {
-        unmute: async () => {
-          isMuted = false;
-          video.muted = false;
-          video.volume = 1;
-          await video.play();
-          syncButton();
-        },
-      };
-
-      button.addEventListener("click", async () => {
-        try {
-          isMuted = !isMuted;
-          video.muted = isMuted;
-          if (!isMuted) {
-            video.volume = 1;
-            await video.play();
-          }
-          syncButton();
-        } catch (_error) {
-          isMuted = true;
-          video.muted = true;
-          syncButton();
-        }
-      });
-
-      syncButton();
-    })();
-  </script>
-
-  <script is:inline>
-    (() => {
-      const frame = document.querySelector(".video-hero__frame");
-      const button = document.querySelector("[data-home-video-fullscreen]");
-      const label = document.querySelector("[data-home-video-fullscreen-label]");
-      if (!frame || !button || !label) return;
-      const fullscreenLabel =
-        button.getAttribute("data-fullscreen-label") || label.textContent || "Full";
-      const exitFullscreenLabel =
-        button.getAttribute("data-exit-fullscreen-label") || "Exit";
-      const syncButton = () => {
-        const isFullscreen = document.fullscreenElement === frame;
-        button.setAttribute("aria-pressed", String(isFullscreen));
-        button.classList.toggle("is-active", isFullscreen);
-        label.textContent = isFullscreen ? exitFullscreenLabel : fullscreenLabel;
-      };
-
-      button.addEventListener("click", async () => {
-        try {
-          if (document.fullscreenElement === frame) {
-            await document.exitFullscreen();
-          } else {
-            await frame.requestFullscreen();
-            if (
-              window.__homeVideoControls &&
-              typeof window.__homeVideoControls.unmute === "function"
-            ) {
-              await window.__homeVideoControls.unmute();
-            }
-          }
-        } catch (_error) {
-          return;
-        }
-
-        syncButton();
-      });
-
-      document.addEventListener("fullscreenchange", syncButton);
-      syncButton();
-    })();
-  </script>
 
   <style>
     .home-redesign {
