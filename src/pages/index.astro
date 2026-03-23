@@ -571,6 +571,7 @@ const homeSchema = [
       let player = null;
       let isMuted = true;
       let isVideoVisible = false;
+      let sdkPoll = null;
 
       const syncPlayback = async () => {
         if (!player) return;
@@ -594,6 +595,7 @@ const homeSchema = [
 
       window.__homeVideoControls = {
         unmute: async () => {
+          if (!player && !setupPlayer()) return;
           if (!player) return;
           isMuted = false;
           player.muted = false;
@@ -604,58 +606,77 @@ const homeSchema = [
       };
 
       const setupPlayer = () => {
+        if (player) return true;
         if (typeof window.Stream !== "function") return false;
-        player = window.Stream(iframe);
+        try {
+          player = window.Stream(iframe);
+        } catch (_error) {
+          player = null;
+          return false;
+        }
         player.muted = true;
         player.loop = true;
         syncButton();
         syncPlayback();
 
-        button.addEventListener("click", async () => {
-          if (!player) return;
-          try {
-            isMuted = !isMuted;
-            player.muted = isMuted;
-            if (!isMuted) {
-              player.volume = 1;
-              await player.play();
-            }
-            syncButton();
-          } catch (_error) {
-            isMuted = true;
-            player.muted = true;
-            syncButton();
-          }
-        });
-
         return true;
       };
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          const [entry] = entries;
-          isVideoVisible =
-            Boolean(entry && entry.isIntersecting) &&
-            (entry ? entry.intersectionRatio : 0) >= 0.35;
-          syncPlayback();
-        },
-        {
-          threshold: [0, 0.35, 0.65],
-        },
-      );
+      button.addEventListener("click", async () => {
+        if (!player && !setupPlayer()) return;
+        if (!player) return;
+        try {
+          isMuted = !isMuted;
+          player.muted = isMuted;
+          if (!isMuted) {
+            player.volume = 1;
+            await player.play();
+          }
+          syncButton();
+        } catch (_error) {
+          isMuted = true;
+          player.muted = true;
+          syncButton();
+        }
+      });
 
-      observer.observe(videoHero);
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const [entry] = entries;
+            isVideoVisible =
+              Boolean(entry && entry.isIntersecting) &&
+              (entry ? entry.intersectionRatio : 0) >= 0.35;
+            syncPlayback();
+          },
+          {
+            threshold: [0, 0.35, 0.65],
+          },
+        );
+
+        observer.observe(videoHero);
+      } else {
+        isVideoVisible = true;
+      }
+
+      syncButton();
 
       if (setupPlayer()) return;
 
-      const waitForSdk = window.setInterval(() => {
+      sdkPoll = window.setInterval(() => {
         if (!setupPlayer()) return;
-        window.clearInterval(waitForSdk);
+        window.clearInterval(sdkPoll);
       }, 150);
 
-      window.setTimeout(() => window.clearInterval(waitForSdk), 5000);
+      window.setTimeout(() => {
+        if (sdkPoll) {
+          window.clearInterval(sdkPoll);
+        }
+      }, 5000);
     })();
+  </script>
 
+  <script is:inline>
     (() => {
       const frame = document.querySelector(".video-hero__frame");
       const button = document.querySelector("[data-home-video-fullscreen]");
