@@ -364,6 +364,17 @@ const homeSchema = [
       </div>
 
       <div class="pillars__tabs" data-pillars>
+        {
+          pillars.map((pillar, index) => (
+            <input
+              class="pillars__radio"
+              type="radio"
+              name="pillars-tab"
+              id={`pillars-tab-${pillar.id}`}
+              checked={index === 0}
+            />
+          ))
+        }
         <div
           class="pillars__nav"
           role="tablist"
@@ -371,18 +382,16 @@ const homeSchema = [
         >
           {
             pillars.map((pillar, index) => (
-              <button
+              <label
                 class="pillars__tab"
-                type="button"
                 role="tab"
                 id={`tab-${pillar.id}`}
+                for={`pillars-tab-${pillar.id}`}
                 aria-controls={`panel-${pillar.id}`}
-                aria-selected={index === 0 ? "true" : "false"}
                 tabindex={index === 0 ? "0" : "-1"}
-                data-pillars-tab
               >
                 {pillar.tab}
-              </button>
+              </label>
             ))
           }
         </div>
@@ -395,8 +404,7 @@ const homeSchema = [
                 role="tabpanel"
                 id={`panel-${pillar.id}`}
                 aria-labelledby={`tab-${pillar.id}`}
-                hidden={index === 0 ? undefined : true}
-                data-pillars-panel
+                data-pillar-id={pillar.id}
               >
                 <div class="stack">
                   <h3>{pillar.title}</h3>
@@ -551,45 +559,6 @@ const homeSchema = [
   ></script>
 
   <script is:inline>
-    (() => {
-      const root = document.querySelector("[data-pillars]");
-      if (!root) return;
-
-      const tabs = Array.from(root.querySelectorAll("[data-pillars-tab]"));
-      const panels = Array.from(root.querySelectorAll("[data-pillars-panel]"));
-
-      const activate = (index) => {
-        tabs.forEach((tab, tabIndex) => {
-          tab.setAttribute(
-            "aria-selected",
-            tabIndex === index ? "true" : "false",
-          );
-          tab.setAttribute("tabindex", tabIndex === index ? "0" : "-1");
-        });
-
-        panels.forEach((panel, panelIndex) => {
-          panel.classList.toggle("is-active", panelIndex === index);
-          panel.hidden = panelIndex !== index;
-        });
-      };
-
-      tabs.forEach((tab, index) => {
-        tab.addEventListener("click", () => activate(index));
-        tab.addEventListener("keydown", (event) => {
-          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-          event.preventDefault();
-          const nextIndex =
-            event.key === "ArrowRight"
-              ? (index + 1) % tabs.length
-              : (index - 1 + tabs.length) % tabs.length;
-          activate(nextIndex);
-          if (tabs[nextIndex]) {
-            tabs[nextIndex].focus();
-          }
-        });
-      });
-    })();
-
     (() => {
       const iframe = document.getElementById("home-stream-player");
       const button = document.querySelector("[data-home-video-toggle]");
@@ -1751,7 +1720,16 @@ const homeSchema = [
       margin-bottom: 1.5rem;
     }
 
+    .pillars__radio {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .pillars__tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border: 1px solid var(--line);
       background: rgba(255, 255, 255, 0.75);
       color: var(--muted);
@@ -1767,7 +1745,9 @@ const homeSchema = [
       outline-offset: 2px;
     }
 
-    .pillars__tab[aria-selected="true"] {
+    #pillars-tab-different:checked ~ .pillars__nav label[for="pillars-tab-different"],
+    #pillars-tab-using:checked ~ .pillars__nav label[for="pillars-tab-using"],
+    #pillars-tab-love:checked ~ .pillars__nav label[for="pillars-tab-love"] {
       background: var(--ink);
       color: white;
     }
@@ -1788,7 +1768,10 @@ const homeSchema = [
       box-shadow: 0 2rem 4rem rgba(121, 57, 67, 0.1);
     }
 
-    .pillar-panel.is-active {
+    .pillar-panel.is-active,
+    #pillars-tab-different:checked ~ .pillars__panels [data-pillar-id="different"],
+    #pillars-tab-using:checked ~ .pillars__panels [data-pillar-id="using"],
+    #pillars-tab-love:checked ~ .pillars__panels [data-pillar-id="love"] {
       display: grid;
       animation: fadeIn 500ms cubic-bezier(0.16, 1, 0.3, 1);
     }
