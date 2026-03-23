@@ -15,7 +15,10 @@ const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
   <div class="cb-shell-footer__glow"></div>
   <div class="cb-shell-footer__inner">
     <div class="cb-shell-footer__brand">
-      <img src="/assets/images/www-blossoms-com-logo.png" alt="Cherry Blossoms Dating logo" />
+      <img
+        src="/assets/images/www-blossoms-com-logo.png"
+        alt="Cherry Blossoms Dating logo"
+      />
       <p>
         {ui.footer.blurb}
       </p>
@@ -46,19 +49,28 @@ const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
       <a href={localizePath("/", locale)}>{ui.nav.home}</a>
       <a href="/blog/">{ui.nav.blog}</a>
       <a href={localizePath("/#locations", locale)}>{ui.nav.locations}</a>
-      <a href="https://members.blossoms.com/register.php">{ui.footer.joinBlossoms}</a>
+      <a href="https://members.blossoms.com/register.php"
+        >{ui.footer.joinBlossoms}</a
+      >
     </div>
     <div class="cb-shell-footer__group">
       <h2>{ui.footer.about}</h2>
       <a href={localizePath("/about-us/", locale)}>{ui.nav.about}</a>
-      <a href={localizePath("/dating-safety/", locale)}>{ui.nav.datingSafety}</a>
-      <a href={localizePath("/frequently-asked-questions/", locale)}>{ui.nav.faqs}</a>
+      <a href={localizePath("/dating-safety/", locale)}>{ui.nav.datingSafety}</a
+      >
+      <a href={localizePath("/frequently-asked-questions/", locale)}
+        >{ui.nav.faqs}</a
+      >
       <a href={localizePath("/contact-us/", locale)}>{ui.footer.contactUs}</a>
     </div>
     <div class="cb-shell-footer__group">
       <h2>{ui.footer.legal}</h2>
-      <a href={localizePath("/terms-of-use/", locale)} rel="nofollow">{ui.footer.terms}</a>
-      <a href={localizePath("/privacy-policy/", locale)} rel="nofollow">{ui.footer.privacy}</a>
+      <a href={localizePath("/terms-of-use/", locale)} rel="nofollow"
+        >{ui.footer.terms}</a
+      >
+      <a href={localizePath("/privacy-policy/", locale)} rel="nofollow"
+        >{ui.footer.privacy}</a
+      >
       <p class="cb-shell-footer__meta">
         © {currentYear} Cherry Blossoms Dating®
       </p>
@@ -183,7 +195,7 @@ const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
 
   @media (max-width: 767px) {
     :global(:root) {
-      --global-content-edge-padding: 0.45rem;
+      --global-content-edge-padding: 0;
     }
 
     .cb-shell-footer__inner {
