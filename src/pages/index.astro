@@ -563,16 +563,19 @@ const homeSchema = [
     </section>
   </div>
 
-  <script is:inline>
+  <script
+    is:inline
+    define:vars={{
+      soundLabel: homeCopy.videoSound,
+      muteLabel: homeCopy.videoMute,
+    }}
+  >
     (() => {
       const video = document.getElementById("home-stream-player");
       const button = document.querySelector("[data-home-video-toggle]");
       const label = document.querySelector("[data-home-video-toggle-label]");
       const videoHero = document.querySelector(".video-hero");
       if (!(video instanceof HTMLVideoElement) || !button || !label || !videoHero) return;
-
-      const soundLabel = {JSON.stringify(homeCopy.videoSound)};
-      const muteLabel = {JSON.stringify(homeCopy.videoMute)};
       let isMuted = true;
       let isVideoVisible = false;
 
@@ -644,15 +647,18 @@ const homeSchema = [
     })();
   </script>
 
-  <script is:inline>
+  <script
+    is:inline
+    define:vars={{
+      fullscreenLabel: homeCopy.videoFullscreen,
+      exitFullscreenLabel: homeCopy.videoExitFullscreen,
+    }}
+  >
     (() => {
       const frame = document.querySelector(".video-hero__frame");
       const button = document.querySelector("[data-home-video-fullscreen]");
       const label = document.querySelector("[data-home-video-fullscreen-label]");
       if (!frame || !button || !label) return;
-
-      const fullscreenLabel = {JSON.stringify(homeCopy.videoFullscreen)};
-      const exitFullscreenLabel = {JSON.stringify(homeCopy.videoExitFullscreen)};
       const syncButton = () => {
         const isFullscreen = document.fullscreenElement === frame;
         button.setAttribute("aria-pressed", String(isFullscreen));
