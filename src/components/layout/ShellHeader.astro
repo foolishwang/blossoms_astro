@@ -154,7 +154,8 @@ function isActivePath(href = "") {
       const target = event.currentTarget;
       if (!(target instanceof HTMLSelectElement)) return;
       const nextHref = target.value;
-      const nextLocale = nextHref.match(/^\/([a-z-]+)\//i)?.[1] || "en";
+      const localeMatch = nextHref.match(/^\/([a-z-]+)\//i);
+      const nextLocale = (localeMatch && localeMatch[1]) || "en";
       window.localStorage.setItem(languageStorageKey, nextLocale);
       window.location.href = nextHref;
     });
