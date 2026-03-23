@@ -78,10 +78,10 @@ export const HOME_PAGE_COPY: Record<Locale, HomePageCopy> = {
     ],
     overviewKicker: "Platform Overview",
     overviewTitle:
-      "A relationship-first Asian dating platform with more structure and less noise",
+      "Asian Dating Site Online in the Philippines Where You Can Meet Singles with Ease",
     overviewBody: [
-      "Blossoms is designed for people who want to meet Asian singles in a setting that feels more credible, more patient, and less disposable than mainstream dating apps.",
-      "Profiles, messaging, and matching tools are meant to support real conversations and long-term compatibility. If you want city- and country-specific Filipina dating pages, those live deeper in the site, while the homepage stays focused on the broader Cherry Blossoms Asian dating brand.",
+      "We see ourselves as more than just an “Asian dating site” but as a place for lasting love to find its first light. Blossoms is more that just another place to meet Asian single woman that turn out to not exist.",
+      "We’re unlike any other Philippines online dating site – our profiles are where genuine heartwarming love stories begin. We have a love for connecting people and beginning the spark of real relationships. With our intelligent technology matching system you’ll meet Asian singles who share your relationship goals, cultural interests and a genuine desire to build a future together.",
     ],
     overviewCaptionKicker: "Editorial Selection",
     overviewCaptionTitle:
