@@ -11,6 +11,7 @@ import {
 import {
   localizeBlossomsAssetHtml,
   toAbsoluteSiteUrl,
+  toRelativeSiteUrl,
   toLocalBlossomsAssetUrl,
 } from "../lib/url-utils";
 import { buildSiteSchemas, DEFAULT_OG_IMAGE } from "../lib/seo";
@@ -59,7 +60,7 @@ const fontFaceStyles = localizeBlossomsAssetHtml(
 const resolvedOgImage = seo.ogImage || DEFAULT_OG_IMAGE;
 const resolvedTwitterImage = seo.twitterImage || resolvedOgImage;
 const localeMeta = getLocaleMeta(currentLocale);
-const currentPath = localizedPath || canonical || "/";
+const currentPath = toRelativeSiteUrl(localizedPath || canonical || "/");
 const localeAlternates = showLanguageSwitcher
   ? buildLocaleAlternates(currentPath)
   : [];
