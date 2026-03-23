@@ -249,12 +249,11 @@ const homeSchema = [
             poster={toLocalBlossomsAssetUrl(
               "https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg",
             )}
-            loading="lazy"
             autoplay
             muted
             loop
             playsinline
-            preload="metadata"
+            preload="auto"
           ></video>
         </div>
         <button
@@ -567,6 +566,23 @@ const homeSchema = [
       </details>
     </section>
   </div>
+
+  <script is:inline>
+    (() => {
+      const video = document.getElementById("home-stream-player");
+      if (!(video instanceof HTMLVideoElement)) return;
+
+      const tryPlay = () => {
+        video.play().catch(() => {});
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", tryPlay, { once: true });
+      } else {
+        tryPlay();
+      }
+    })();
+  </script>
 
   <script is:inline>
     (() => {
