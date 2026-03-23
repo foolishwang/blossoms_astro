@@ -162,6 +162,12 @@ function isActivePath(href = "") {
   });
 
   if (toggle && nav) {
+    const closeMobileNav = () => {
+      toggle.classList.remove("is-open");
+      nav.classList.remove("is-open");
+      document.body.classList.remove("lock-scroll");
+    };
+
     toggle.addEventListener("click", () => {
       toggle.classList.toggle("is-open");
       nav.classList.toggle("is-open");
@@ -170,10 +176,23 @@ function isActivePath(href = "") {
 
     nav.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", () => {
-        toggle.classList.remove("is-open");
-        nav.classList.remove("is-open");
-        document.body.classList.remove("lock-scroll");
+        closeMobileNav();
       });
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      const isClickInsideNav = nav.contains(target);
+      const isClickOnToggle = toggle.contains(target);
+
+      if (
+        !isClickInsideNav &&
+        !isClickOnToggle &&
+        nav.classList.contains("is-open")
+      ) {
+        closeMobileNav();
+      }
     });
   }
 </script>
