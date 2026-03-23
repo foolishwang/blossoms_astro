@@ -107,13 +107,17 @@ function isActivePath(href = "") {
             </label>
           )
         }
-        <a class="cb-shell-link" href="https://members.blossoms.com/login.php"
-          >{ui.nav.login}</a
-        >
-        <a
-          class="cb-shell-button"
-          href="https://members.blossoms.com/register.php">{ui.nav.register}</a
-        >
+        <div class="cb-shell-nav-auth">
+          <a
+            class="cb-shell-button cb-shell-button--secondary"
+            href="https://members.blossoms.com/login.php">{ui.nav.login}</a
+          >
+          <a
+            class="cb-shell-button cb-shell-button--primary"
+            href="https://members.blossoms.com/register.php"
+            >{ui.nav.register}</a
+          >
+        </div>
       </div>
     </nav>
     <div class="cb-shell-actions desktop-only">
@@ -333,11 +337,29 @@ function isActivePath(href = "") {
       border-color 0.18s ease;
   }
 
+  .cb-shell-button--primary {
+    background: linear-gradient(135deg, #cf4c58, #b83b46);
+    box-shadow: 0 0.7rem 1.4rem rgba(184, 59, 70, 0.2);
+  }
+
+  .cb-shell-button--secondary {
+    background: rgba(255, 255, 255, 0.92);
+    color: #7a3442;
+    border-color: rgba(164, 42, 52, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+  }
+
   .cb-shell-button:hover {
     color: #fff;
     background: #b93d49;
     border-color: rgba(164, 42, 52, 0.28);
     transform: translateY(-1px);
+  }
+
+  .cb-shell-button--secondary:hover {
+    color: #6a2836;
+    background: rgba(255, 247, 245, 0.98);
+    border-color: rgba(164, 42, 52, 0.24);
   }
 
   @media (max-width: 1024px) {
@@ -397,6 +419,21 @@ function isActivePath(href = "") {
       gap: 1rem;
       width: 100%;
       margin-top: 2rem;
+    }
+
+    .cb-shell-nav-auth {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .cb-shell-nav-auth .cb-shell-button {
+      width: 100%;
+      min-height: 2.9rem;
+      padding: 0.7rem 1rem;
+      font-size: 0.96rem;
+      letter-spacing: 0.01em;
     }
 
     .cb-language-picker,
