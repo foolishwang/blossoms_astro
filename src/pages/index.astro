@@ -583,7 +583,9 @@ const homeSchema = [
               ? (index + 1) % tabs.length
               : (index - 1 + tabs.length) % tabs.length;
           activate(nextIndex);
-          tabs[nextIndex]?.focus();
+          if (tabs[nextIndex]) {
+            tabs[nextIndex].focus();
+          }
         });
       });
     })();
@@ -664,7 +666,8 @@ const homeSchema = [
         (entries) => {
           const [entry] = entries;
           isVideoVisible =
-            Boolean(entry?.isIntersecting) && (entry?.intersectionRatio ?? 0) >= 0.35;
+            Boolean(entry && entry.isIntersecting) &&
+            (entry ? entry.intersectionRatio : 0) >= 0.35;
           syncPlayback();
         },
         {
@@ -705,7 +708,12 @@ const homeSchema = [
             await document.exitFullscreen();
           } else {
             await frame.requestFullscreen();
-            await window.__homeVideoControls?.unmute?.();
+            if (
+              window.__homeVideoControls &&
+              typeof window.__homeVideoControls.unmute === "function"
+            ) {
+              await window.__homeVideoControls.unmute();
+            }
           }
         } catch (_error) {
           return;
