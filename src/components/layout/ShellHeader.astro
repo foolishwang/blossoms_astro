@@ -81,6 +81,19 @@ function isActivePath(href = "") {
     </button>
     <nav class="cb-shell-nav" id="main-nav" aria-label="Primary">
       {
+        showLanguageSwitcher && (
+          <label class="cb-language-picker cb-language-picker--mobile">
+            <select data-language-switcher>
+              {languageOptions.map((option) => (
+                <option value={option.href} selected={option.locale === locale}>
+                  {option.nativeLabel}
+                </option>
+              ))}
+            </select>
+          </label>
+        )
+      }
+      {
         navLinks.map((link) => (
           <a
             href={link.href}
@@ -91,22 +104,6 @@ function isActivePath(href = "") {
         ))
       }
       <div class="cb-shell-nav-actions">
-        {
-          showLanguageSwitcher && (
-            <label class="cb-language-picker cb-language-picker--mobile">
-              <select data-language-switcher>
-                {languageOptions.map((option) => (
-                  <option
-                    value={option.href}
-                    selected={option.locale === locale}
-                  >
-                    {option.nativeLabel}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )
-        }
         <div class="cb-shell-nav-auth">
           <a
             class="cb-shell-button cb-shell-button--secondary"
@@ -275,6 +272,10 @@ function isActivePath(href = "") {
     display: inline-flex;
   }
 
+  .cb-language-picker--mobile {
+    display: none;
+  }
+
   .cb-language-picker select {
     min-height: 2.15rem;
     padding: 0.42rem 2rem 0.42rem 0.75rem;
@@ -411,6 +412,12 @@ function isActivePath(href = "") {
       width: 100%;
       padding: 0.75rem 0;
       border-bottom: 1px solid rgba(90, 46, 57, 0.08);
+    }
+
+    .cb-language-picker--mobile {
+      display: inline-flex;
+      width: 100%;
+      margin-bottom: 0.35rem;
     }
 
     .cb-shell-nav-actions {
