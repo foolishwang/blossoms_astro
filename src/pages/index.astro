@@ -578,19 +578,6 @@ const homeSchema = [
       const soundLabel = button.getAttribute("data-sound-label") || label.textContent || "Sound";
       const muteLabel = button.getAttribute("data-mute-label") || "Mute";
       let isMuted = true;
-      let isVideoVisible = true;
-
-      const syncPlayback = async () => {
-        try {
-          if (isVideoVisible) {
-            await video.play();
-          } else {
-            video.pause();
-          }
-        } catch (_error) {
-          return;
-        }
-      };
 
       const syncButton = () => {
         button.setAttribute("aria-pressed", String(!isMuted));
@@ -624,35 +611,7 @@ const homeSchema = [
         }
       });
 
-      video.addEventListener("loadedmetadata", () => {
-        syncPlayback();
-      });
-
-      video.addEventListener("canplay", () => {
-        syncPlayback();
-      });
-
-      if ("IntersectionObserver" in window) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            const [entry] = entries;
-            isVideoVisible =
-              Boolean(entry && entry.isIntersecting) &&
-              (entry ? entry.intersectionRatio : 0) >= 0.35;
-            syncPlayback();
-          },
-          {
-            threshold: [0, 0.35, 0.65],
-          },
-        );
-
-        observer.observe(videoHero);
-      } else {
-        isVideoVisible = true;
-      }
-
       syncButton();
-      syncPlayback();
     })();
   </script>
 
