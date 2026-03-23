@@ -11,7 +11,7 @@ const { locale = DEFAULT_LOCALE } = Astro.props as { locale?: Locale };
 const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
 ---
 
-<footer class="cb-shell-footer" role="contentinfo">
+<footer class="cb-shell-footer hide" role="contentinfo">
   <div class="cb-shell-footer__glow"></div>
   <div class="cb-shell-footer__inner">
     <div class="cb-shell-footer__brand">
@@ -79,6 +79,9 @@ const ui = UI_STRINGS[locale] || UI_STRINGS[DEFAULT_LOCALE];
 </footer>
 
 <style>
+  .hide {
+    display: none !important;
+  }
   .cb-shell-footer {
     position: relative;
     overflow: clip;

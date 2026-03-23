@@ -179,10 +179,16 @@ function isActivePath(href = "") {
 </script>
 
 <style>
+  .hide {
+    display: none !important;
+  }
   .cb-shell-header {
     position: sticky;
     top: 0;
     z-index: 40;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     border-bottom: 1px solid rgba(146, 55, 72, 0.08);
     background:
       linear-gradient(
@@ -320,6 +326,10 @@ function isActivePath(href = "") {
       --global-content-edge-padding: 0rem;
     }
 
+    .cb-shell-header {
+      overflow-x: clip;
+    }
+
     .cb-shell-header__inner {
       grid-template-columns: auto 1fr;
       padding: 0.85rem 0;
@@ -339,7 +349,7 @@ function isActivePath(href = "") {
       position: fixed;
       top: 0;
       right: -100%;
-      width: 85%;
+      width: 80%;
       height: 100vh;
       padding: 6rem 2rem;
       flex-direction: column;
@@ -397,10 +407,6 @@ function isActivePath(href = "") {
   }
 
   @media (max-width: 640px) {
-    .cb-shell-header {
-      overflow-x: clip;
-    }
-
     .cb-shell-header__inner {
       width: 100%;
       max-width: 100%;
@@ -412,8 +418,7 @@ function isActivePath(href = "") {
     }
 
     .cb-shell-brand img {
-      width: 250px;
-      max-width: 100%;
+      width: 240px;
     }
 
     .cb-shell-mobile-toggle {

@@ -2,7 +2,12 @@
 import routes from "../data/routes.json";
 import global from "../data/global.json";
 import SiteLayout from "../layouts/SiteLayout.astro";
-import { DEFAULT_LOCALE, UI_STRINGS, localizePath, type Locale } from "../lib/i18n";
+import {
+  DEFAULT_LOCALE,
+  UI_STRINGS,
+  localizePath,
+  type Locale,
+} from "../lib/i18n";
 import { HOME_PAGE_COPY } from "../lib/home-page-copy";
 import { toLocalBlossomsAssetUrl, toRelativeSiteUrl } from "../lib/url-utils";
 import {
@@ -12,10 +17,7 @@ import {
 } from "../lib/seo";
 
 const home = routes.find((entry) => entry.route === "/");
-const {
-  locale = DEFAULT_LOCALE,
-  localizedPath = "/",
-} = Astro.props as {
+const { locale = DEFAULT_LOCALE, localizedPath = "/" } = Astro.props as {
   locale?: Locale;
   localizedPath?: string;
 };
@@ -179,7 +181,7 @@ const homeSchema = [
   }}
   disableExternalAssets={true}
 >
-  <div class="home-redesign">
+  <div class="home-redesign" style="border:2px solid #ff0000">
     <section class="hero hero-section">
       <div class="hero__backdrop"></div>
       <div class="shell hero__grid">
@@ -210,14 +212,15 @@ const homeSchema = [
           <div class="cb-login">
             <strong>
               {ui.home.alreadyMember}
-              <a href="https://members.blossoms.com/login.php">{ui.nav.login}</a>
+              <a href="https://members.blossoms.com/login.php">{ui.nav.login}</a
+              >
             </strong>
           </div>
         </aside>
       </div>
     </section>
 
-    <section class="featured shell">
+    <section class="featured shell hide">
       <p class="section-kicker">{homeCopy.featuredKicker}</p>
       <h2>{homeCopy.featuredTitle}</h2>
       <div class="featured__logos">
@@ -236,7 +239,7 @@ const homeSchema = [
       </div>
     </section>
 
-    <section class="shell split--media">
+    <section class="shell split--media hide">
       <div class="video-hero">
         <div class="video-hero__frame">
           <iframe
@@ -245,13 +248,12 @@ const homeSchema = [
             title={homeCopy.videoTitle}
             loading="lazy"
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-            allowfullscreen
-          ></iframe>
+            allowfullscreen></iframe>
         </div>
       </div>
     </section>
 
-    <section class="about shell">
+    <section class="about shell hide">
       <div class="about__grid">
         <div class="about__content">
           <p class="section-kicker">{homeCopy.aboutKicker}</p>
@@ -267,8 +269,13 @@ const homeSchema = [
             }
           </ul>
           <div class="panel-actions">
-            <a class="button-primary" href={localizePath("/about-us/", locale)}>{homeCopy.aboutPrimaryCta}</a>
-            <a class="button-secondary" href={localizePath("/dating-safety/", locale)}>
+            <a class="button-primary" href={localizePath("/about-us/", locale)}
+              >{homeCopy.aboutPrimaryCta}</a
+            >
+            <a
+              class="button-secondary"
+              href={localizePath("/dating-safety/", locale)}
+            >
               {homeCopy.aboutSecondaryCta}
             </a>
           </div>
@@ -296,7 +303,7 @@ const homeSchema = [
       </div>
     </section>
 
-    <section class="platform overview">
+    <section class="platform overview hide">
       <div class="overview-card">
         <div class="overview-card__media">
           <div class="image-card image-card--overview">
@@ -325,7 +332,7 @@ const homeSchema = [
       </div>
     </section>
 
-    <section class="stats">
+    <section class="stats hide">
       <div class="shell stats__grid">
         {
           stats.map((stat) => (
@@ -339,7 +346,7 @@ const homeSchema = [
       </div>
     </section>
 
-    <section class="pillars shell">
+    <section class="pillars shell hide">
       <div class="pillars__intro">
         <p class="section-kicker">{homeCopy.pillarsKicker}</p>
         <h2>{homeCopy.pillarsTitle}</h2>
@@ -420,14 +427,19 @@ const homeSchema = [
       </div>
     </section>
 
-    <section class="stories shell">
+    <section class="stories shell hide">
       <div class="stories__intro">
         <p class="section-kicker">{homeCopy.storiesKicker}</p>
         <h2>{homeCopy.storiesTitle}</h2>
         <p>{homeCopy.storiesBody}</p>
         <div class="panel-actions">
-          <a class="button-primary" href="/blog/">{homeCopy.storiesPrimaryCta}</a>
-          <a class="button-secondary" href={localizePath("/frequently-asked-questions/", locale)}>
+          <a class="button-primary" href="/blog/"
+            >{homeCopy.storiesPrimaryCta}</a
+          >
+          <a
+            class="button-secondary"
+            href={localizePath("/frequently-asked-questions/", locale)}
+          >
             {homeCopy.storiesSecondaryCta}
           </a>
         </div>
@@ -467,7 +479,7 @@ const homeSchema = [
       </div>
     </section>
 
-    <section class="faq shell">
+    <section class="faq shell hide">
       <div class="faq__copy">
         <p class="section-kicker">{homeCopy.faqKicker}</p>
         <h2>{homeCopy.faqTitle}</h2>
@@ -498,7 +510,7 @@ const homeSchema = [
       </aside>
     </section>
 
-    <section class="locations shell" id="locations">
+    <section class="locations shell hide" id="locations">
       <div class="locations__intro">
         <p class="section-kicker">{homeCopy.locationsKicker}</p>
         <h2>{homeCopy.locationsTitle}</h2>
@@ -537,8 +549,10 @@ const homeSchema = [
     </section>
   </div>
 
-
   <style>
+    .hide {
+      display: none !important;
+    }
     .home-redesign {
       --bg: #fff8f3;
       --surface: rgba(255, 255, 255, 0.82);
@@ -633,7 +647,7 @@ const homeSchema = [
       padding: 4rem 0 4.5rem;
       position: relative;
       z-index: 1;
-      height:100%;
+      height: 100%;
     }
 
     .hero__copy {
@@ -1486,7 +1500,9 @@ const homeSchema = [
       outline-offset: 2px;
     }
 
-    #pillars-tab-different:checked ~ .pillars__nav label[for="pillars-tab-different"],
+    #pillars-tab-different:checked
+      ~ .pillars__nav
+      label[for="pillars-tab-different"],
     #pillars-tab-using:checked ~ .pillars__nav label[for="pillars-tab-using"],
     #pillars-tab-love:checked ~ .pillars__nav label[for="pillars-tab-love"] {
       background: var(--ink);
@@ -1510,7 +1526,9 @@ const homeSchema = [
     }
 
     .pillar-panel.is-active,
-    #pillars-tab-different:checked ~ .pillars__panels [data-pillar-id="different"],
+    #pillars-tab-different:checked
+      ~ .pillars__panels
+      [data-pillar-id="different"],
     #pillars-tab-using:checked ~ .pillars__panels [data-pillar-id="using"],
     #pillars-tab-love:checked ~ .pillars__panels [data-pillar-id="love"] {
       display: grid;
