@@ -86,7 +86,7 @@ function isActivePath(href = "") {
             <select data-language-switcher>
               {languageOptions.map((option) => (
                 <option value={option.href} selected={option.locale === locale}>
-                  {option.nativeLabel}
+                  {option.displayLabel}
                 </option>
               ))}
             </select>
@@ -124,7 +124,7 @@ function isActivePath(href = "") {
             <select data-language-switcher>
               {languageOptions.map((option) => (
                 <option value={option.href} selected={option.locale === locale}>
-                  {option.nativeLabel}
+                  {option.displayLabel}
                 </option>
               ))}
             </select>

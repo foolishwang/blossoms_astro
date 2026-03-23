@@ -17,6 +17,7 @@ export const LOCALE_META: Record<
   {
     label: string;
     nativeLabel: string;
+    flag: string;
     htmlLang: string;
     ogLocale: string;
     hreflang: string;
@@ -25,6 +26,7 @@ export const LOCALE_META: Record<
   en: {
     label: "English",
     nativeLabel: "English",
+    flag: "🇺🇸",
     htmlLang: "en-US",
     ogLocale: "en_US",
     hreflang: "en",
@@ -32,6 +34,7 @@ export const LOCALE_META: Record<
   zh: {
     label: "Chinese",
     nativeLabel: "中文",
+    flag: "🇨🇳",
     htmlLang: "zh-CN",
     ogLocale: "zh_CN",
     hreflang: "zh-CN",
@@ -39,6 +42,7 @@ export const LOCALE_META: Record<
   fil: {
     label: "Filipino",
     nativeLabel: "Filipino",
+    flag: "🇵🇭",
     htmlLang: "fil-PH",
     ogLocale: "fil_PH",
     hreflang: "fil-PH",
@@ -46,6 +50,7 @@ export const LOCALE_META: Record<
   th: {
     label: "Thai",
     nativeLabel: "ไทย",
+    flag: "🇹🇭",
     htmlLang: "th-TH",
     ogLocale: "th_TH",
     hreflang: "th-TH",
@@ -53,6 +58,7 @@ export const LOCALE_META: Record<
   vi: {
     label: "Vietnamese",
     nativeLabel: "Tiếng Việt",
+    flag: "🇻🇳",
     htmlLang: "vi-VN",
     ogLocale: "vi_VN",
     hreflang: "vi-VN",
@@ -60,6 +66,7 @@ export const LOCALE_META: Record<
   ja: {
     label: "Japanese",
     nativeLabel: "日本語",
+    flag: "🇯🇵",
     htmlLang: "ja-JP",
     ogLocale: "ja_JP",
     hreflang: "ja-JP",
@@ -67,6 +74,7 @@ export const LOCALE_META: Record<
   es: {
     label: "Spanish",
     nativeLabel: "Español",
+    flag: "🇪🇸",
     htmlLang: "es-ES",
     ogLocale: "es_ES",
     hreflang: "es-ES",
@@ -153,6 +161,7 @@ export function getLanguageOptions(currentPath = "/") {
     locale,
     label: LOCALE_META[locale].label,
     nativeLabel: LOCALE_META[locale].nativeLabel,
+    displayLabel: `${LOCALE_META[locale].flag} ${LOCALE_META[locale].nativeLabel}`,
     href: localizePath(currentPath, locale),
   }));
 }
