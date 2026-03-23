@@ -250,6 +250,7 @@ const homeSchema = [
               "https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg",
             )}
             loading="lazy"
+            autoplay
             muted
             loop
             playsinline
@@ -577,7 +578,7 @@ const homeSchema = [
       const soundLabel = button.getAttribute("data-sound-label") || label.textContent || "Sound";
       const muteLabel = button.getAttribute("data-mute-label") || "Mute";
       let isMuted = true;
-      let isVideoVisible = false;
+      let isVideoVisible = true;
 
       const syncPlayback = async () => {
         try {
@@ -621,6 +622,14 @@ const homeSchema = [
           video.muted = true;
           syncButton();
         }
+      });
+
+      video.addEventListener("loadedmetadata", () => {
+        syncPlayback();
+      });
+
+      video.addEventListener("canplay", () => {
+        syncPlayback();
       });
 
       if ("IntersectionObserver" in window) {
