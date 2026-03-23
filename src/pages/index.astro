@@ -260,6 +260,8 @@ const homeSchema = [
           class="video-hero__sound-toggle"
           type="button"
           data-home-video-toggle
+          data-sound-label={homeCopy.videoSound}
+          data-mute-label={homeCopy.videoMute}
           aria-pressed="false"
         >
           <span class="video-hero__sound-icon" aria-hidden="true">♪</span>
@@ -269,6 +271,8 @@ const homeSchema = [
           class="video-hero__fullscreen-toggle"
           type="button"
           data-home-video-fullscreen
+          data-fullscreen-label={homeCopy.videoFullscreen}
+          data-exit-fullscreen-label={homeCopy.videoExitFullscreen}
           aria-pressed="false"
         >
           <span class="video-hero__fullscreen-icon" aria-hidden="true">⛶</span>
@@ -563,19 +567,15 @@ const homeSchema = [
     </section>
   </div>
 
-  <script
-    is:inline
-    define:vars={{
-      soundLabel: homeCopy.videoSound,
-      muteLabel: homeCopy.videoMute,
-    }}
-  >
+  <script is:inline>
     (() => {
       const video = document.getElementById("home-stream-player");
       const button = document.querySelector("[data-home-video-toggle]");
       const label = document.querySelector("[data-home-video-toggle-label]");
       const videoHero = document.querySelector(".video-hero");
       if (!(video instanceof HTMLVideoElement) || !button || !label || !videoHero) return;
+      const soundLabel = button.getAttribute("data-sound-label") || label.textContent || "Sound";
+      const muteLabel = button.getAttribute("data-mute-label") || "Mute";
       let isMuted = true;
       let isVideoVisible = false;
 
@@ -647,18 +647,16 @@ const homeSchema = [
     })();
   </script>
 
-  <script
-    is:inline
-    define:vars={{
-      fullscreenLabel: homeCopy.videoFullscreen,
-      exitFullscreenLabel: homeCopy.videoExitFullscreen,
-    }}
-  >
+  <script is:inline>
     (() => {
       const frame = document.querySelector(".video-hero__frame");
       const button = document.querySelector("[data-home-video-fullscreen]");
       const label = document.querySelector("[data-home-video-fullscreen-label]");
       if (!frame || !button || !label) return;
+      const fullscreenLabel =
+        button.getAttribute("data-fullscreen-label") || label.textContent || "Full";
+      const exitFullscreenLabel =
+        button.getAttribute("data-exit-fullscreen-label") || "Exit";
       const syncButton = () => {
         const isFullscreen = document.fullscreenElement === frame;
         button.setAttribute("aria-pressed", String(isFullscreen));
