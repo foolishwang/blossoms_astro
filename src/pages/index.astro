@@ -239,14 +239,22 @@ const homeSchema = [
     <section class="shell split--media">
       <div class="video-hero">
         <div class="video-hero__frame">
-          <iframe
+          <video
             id="home-stream-player"
             class="video-hero__media"
-            src="https://customer-8t8x7431waj10zps.cloudflarestream.com/1a390dc7e554d93a2a8e344523321eda/iframe?autoplay=false&muted=true&loop=true&controls=false&letterboxColor=transparent&poster=https%3A%2F%2Fcustomer-8t8x7431waj10zps.cloudflarestream.com%2F1a390dc7e554d93a2a8e344523321eda%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600"
+            src={toLocalBlossomsAssetUrl(
+              "https://www.blossoms.com/wp-content/uploads/2025/06/AboutUsBlossomsDatin-1.mp4",
+            )}
             title={homeCopy.videoTitle}
+            poster={toLocalBlossomsAssetUrl(
+              "https://www.blossoms.com/wp-content/uploads/2025/06/cherry-blossoms-dating-video.jpg",
+            )}
             loading="lazy"
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-            allowfullscreen></iframe>
+            muted
+            loop
+            playsinline
+            preload="metadata"
+          ></video>
         </div>
         <button
           class="video-hero__sound-toggle"
@@ -555,32 +563,25 @@ const homeSchema = [
     </section>
   </div>
 
-  <script is:inline src="https://embed.cloudflarestream.com/embed/sdk.latest.js"
-  ></script>
-
   <script is:inline>
     (() => {
-      const iframe = document.getElementById("home-stream-player");
+      const video = document.getElementById("home-stream-player");
       const button = document.querySelector("[data-home-video-toggle]");
       const label = document.querySelector("[data-home-video-toggle-label]");
       const videoHero = document.querySelector(".video-hero");
-      if (!iframe || !button || !label || !videoHero) return;
+      if (!(video instanceof HTMLVideoElement) || !button || !label || !videoHero) return;
 
       const soundLabel = {JSON.stringify(homeCopy.videoSound)};
       const muteLabel = {JSON.stringify(homeCopy.videoMute)};
-      let player = null;
       let isMuted = true;
       let isVideoVisible = false;
-      let sdkPoll = null;
 
       const syncPlayback = async () => {
-        if (!player) return;
-
         try {
           if (isVideoVisible) {
-            await player.play();
+            await video.play();
           } else {
-            await player.pause();
+            video.pause();
           }
         } catch (_error) {
           return;
@@ -595,47 +596,26 @@ const homeSchema = [
 
       window.__homeVideoControls = {
         unmute: async () => {
-          if (!player && !setupPlayer()) return;
-          if (!player) return;
           isMuted = false;
-          player.muted = false;
-          player.volume = 1;
-          await player.play();
+          video.muted = false;
+          video.volume = 1;
+          await video.play();
           syncButton();
         },
       };
 
-      const setupPlayer = () => {
-        if (player) return true;
-        if (typeof window.Stream !== "function") return false;
-        try {
-          player = window.Stream(iframe);
-        } catch (_error) {
-          player = null;
-          return false;
-        }
-        player.muted = true;
-        player.loop = true;
-        syncButton();
-        syncPlayback();
-
-        return true;
-      };
-
       button.addEventListener("click", async () => {
-        if (!player && !setupPlayer()) return;
-        if (!player) return;
         try {
           isMuted = !isMuted;
-          player.muted = isMuted;
+          video.muted = isMuted;
           if (!isMuted) {
-            player.volume = 1;
-            await player.play();
+            video.volume = 1;
+            await video.play();
           }
           syncButton();
         } catch (_error) {
           isMuted = true;
-          player.muted = true;
+          video.muted = true;
           syncButton();
         }
       });
@@ -660,19 +640,7 @@ const homeSchema = [
       }
 
       syncButton();
-
-      if (setupPlayer()) return;
-
-      sdkPoll = window.setInterval(() => {
-        if (!setupPlayer()) return;
-        window.clearInterval(sdkPoll);
-      }, 150);
-
-      window.setTimeout(() => {
-        if (sdkPoll) {
-          window.clearInterval(sdkPoll);
-        }
-      }, 5000);
+      syncPlayback();
     })();
   </script>
 
